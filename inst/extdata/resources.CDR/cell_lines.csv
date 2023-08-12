@@ -1,0 +1,55 @@
+cell_id,cell_culture,cell_desc,cell_cancer,cell_use
+A375,Adherent,Human malignant melanoma,TRUE,FALSE
+A549,Adherent,Human non-small cell lung carcinoma,TRUE,TRUE
+HCC515,Adherent,Human non-small cell lung adenocarcinoma,TRUE,FALSE
+HEPG2,Adherent,Human hepatocellular carcinoma cell line,TRUE,FALSE
+MCF7,Adherent,Human breast adenocarcinoma,TRUE,FALSE
+PC3,Adherent,Human prostate adenocarcinoma,TRUE,FALSE
+VCAP,Adherent,Human metastatic prostate cancer,TRUE,FALSE
+HT29,Adherent,Human colorectal adenocarcinoma,TRUE,FALSE
+WM2664,Adherent,Metastatic melanoma,TRUE,FALSE
+TOV112D,Adherent,Malignant adenocarcinoma,TRUE,FALSE
+SW1783,Adherent,Astrocytoma,TRUE,FALSE
+SNU398,Adherent,hepatocellular carcinoma,TRUE,FALSE
+SKMEL5,Adherent,Malignant melanoma,TRUE,FALSE
+SKES1,Adherent,Ewing's sarcoma,TRUE,FALSE
+SKCO1,Adherent,Colorectal adenocarcinoma,TRUE,FALSE
+SCABER,Adherent,Squamous cell carcinoma (bladder),TRUE,FALSE
+PANC1005,Adherent,Pancreatic adenocarcinoma,TRUE,FALSE
+PANC0813,Adherent,Pancreatic ductal adenocarcinoma,TRUE,FALSE
+OE33,Adherent,Barrett adenocarcinoma,TRUE,FALSE
+OE19,Adherent,Esophageal adenocarcinoma,TRUE,FALSE
+NCIH2009,Adherent,Lung adenocarcinoma,TRUE,FALSE
+NCIH1581,Adherent,Non small cell lung cancer,TRUE,FALSE
+NCIH747,Adherent,colorectal adenocarcinoma,TRUE,FALSE
+NCIH661,Adherent,large cell lung cancer,TRUE,FALSE
+NCIH522,Adherent,non-small cell lung cancer,TRUE,TRUE
+KYSE510,Adherent,esophageal squamous cell carcinoma,TRUE,FALSE
+G401,Adherent,Rhabdoid tumor,TRUE,FALSE
+G361,Adherent,Malignant melanoma,TRUE,FALSE
+EFO27,Adherent,Ovarian mucinous adenocarcinoma,TRUE,FALSE
+COLO829,Adherent,Melanoma,TRUE,FALSE
+COLO668,Adherent,Small cell carcinoma,TRUE,FALSE
+CFPAC1,Adherent,Ductal adenocarcinoma (cystic fibrosis),TRUE,FALSE
+CAPAN2,Adherent,Pancreatic adenocarcinoma,TRUE,FALSE
+BICR18,Adherent,Laryngeal squamous cell carcinoma,TRUE,FALSE
+AGS,Adherent,gastric adenocarcinoma,TRUE,FALSE
+BICR6,Adherent,Hypopharyngeal squamous cell carcinoma,TRUE,FALSE
+ES2,Adherent,Clear cell carcinoma,TRUE,FALSE
+YAPC,Adherent,Pancreatic carcinoma,TRUE,FALSE
+U251MG,Adherent,Astrocytoma,TRUE,FALSE
+THP1,Suspension,Acute monocytic leukemia,TRUE,TRUE
+OCILY19,Suspension,B-cell lymphoma,TRUE,TRUE
+BJAB,Suspension,Burkitt lymphoma,TRUE,TRUE
+HBL1,Suspension,Diffuse large B-cell lymphoma,TRUE,TRUE
+K562,Suspension,Chronic myeloid leukemia,TRUE,TRUE
+MINO,Suspension,Mantle cell lymphoma,TRUE,TRUE
+KMS34,Suspension,Plasma cell myeloma,TRUE,FALSE
+NALM6,Suspension,Acute lymphoblastic leukemia,TRUE,TRUE
+OCILY3,Suspension,Diffuse large B-cell lymphoma,TRUE,TRUE
+OCILY10,Suspension,Diffuse large B-cell lymphoma,TRUE,TRUE
+TMD8,Suspension,Diffuse large B-cell lymphoma,TRUE,TRUE
+HA1E,Adherent,Human kidney epithelial immortalized,FALSE,FALSE
+HME1,Adherent,Breast mammary immortalized,FALSE,FALSE
+HFL1,Adherent,Lung fibroblast immortalized,FALSE,TRUE
+NL20,Adherent,Lung epithelial immortalized,FALSE,TRUE

@@ -21,12 +21,16 @@ Depends:
     plyr,
     dplyr,
     tidyr
+biocViews:
 Imports: 
-    ggplot2
+    ggplot2,
+    ggpubr,
+    cowplot,
+    cmapR,
+    Hmisc
 Remotes:
     voloudakislab/MultiWAS
 Suggests:
-    cmapR
 License: GPLv4
 Encoding: UTF-8
 LazyData: true

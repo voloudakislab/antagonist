@@ -49,9 +49,9 @@ aggregate_and_prioritize = function(
   # TODO: Load the files from the save directory and then automatically do appropriate actions.
   message("Loading the data...")
   dfs.to.process <- list.files(
-      path = dirname(dfs.to.process),
-      pattern = basename(dfs.to.process),
-      full.names = T )
+    path = dirname(dfs.to.process),
+    pattern = basename(dfs.to.process),
+    full.names = T )
   dfs.to.process <- dfs.to.process[grep(limit.dfs.to, dfs.to.process)]
   # Probe one file to get some info
   gwass  <- unique(MultiWAS::return_df(dfs.to.process[1])$gwas)
@@ -109,14 +109,13 @@ aggregate_and_prioritize = function(
   # }
 
 
-  combined.output <- lapply(
+  lapply(
     gwass,
     FUN = function(thisgwas) {
 
       message(paste0("Now processing ", thisgwas))
       this.output.dir <- paste0(output.dir, "/", thisgwas, "/")
       MultiWAS::gv_dir.create(this.output.dir)
-
 
       ### MAIN SCRIPT ###
       lapply(
@@ -129,11 +128,11 @@ aggregate_and_prioritize = function(
 
             # Limit to models of interest
             if (!is.na(limit.models.to[1])) x <- x[model_ID %in% limit.models.to]
-
+            modelprefix <- as.character(MultiWAS::make_java_safe(paste(limit.models.to, collapse = "_X_")))
+            if (modelprefix == "NA") modelprefix <- "ALL"
             this.output.dir <- paste0(
               this.output.dir, "/",
-              MultiWAS::make_java_safe(paste(limit.models.to, collapse = "_X_"))
-              , "/")
+              modelprefix, "/")
             MultiWAS::gv_dir.create(this.output.dir)
 
             ###########################
@@ -319,7 +318,7 @@ aggregate_and_prioritize = function(
               ))
               disease_area.repurp[, AvgRank_disease_area := mean(AvgRank), by = disease_area]
               disease_area.repurp = unique(disease_area.repurp[, c("disease_area", "AvgRank_disease_area", "disease_area.pseudo.zscore",
-                                                 "N_compounds_disease_area", "disease_area.MW.p")])
+                                                                   "N_compounds_disease_area", "disease_area.MW.p")])
               disease_area.repurp$Rank_disease_area <- rank(disease_area.repurp$AvgRank_disease_area)
               disease_area.repurp <- disease_area.repurp[order(Rank_disease_area)]
               disease_area.repurp$disease_area.MW.FDR <- p.adjust(disease_area.repurp$disease_area.MW.p, method = "fdr")
@@ -359,7 +358,7 @@ aggregate_and_prioritize = function(
               ))
               indication.repurp[, AvgRank_indication := mean(AvgRank), by = indication]
               indication.repurp = unique(indication.repurp[, c("indication", "AvgRank_indication", "indication.pseudo.zscore",
-                                                                   "N_compounds_indication", "indication.MW.p")])
+                                                               "N_compounds_indication", "indication.MW.p")])
               indication.repurp$Rank_indication <- rank(indication.repurp$AvgRank_indication)
               indication.repurp <- indication.repurp[order(Rank_indication)]
               indication.repurp$indication.MW.FDR <- p.adjust(indication.repurp$indication.MW.p, method = "fdr")
@@ -404,153 +403,42 @@ aggregate_and_prioritize = function(
               fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
                                             ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
                                             "_launched_compound_level.csv"))
-
-
-
             } else {
 
               ### GTP SPECIFIC SCRIPTS ###
+              compound.level$Rank <- rank(compound.level$AvgRank) # replace Rank
+              compound.level$Compound.MW.FDR <- p.adjust(compound.level$Compound.MW.p, method = "fdr")
+              compound.level <- compound.level[order(Rank)][
+                , c("pert_iname", "Rank", "AvgRank", "Compound.MW.p",
+                    "Compound.pseudo.zscore", "Compound.MW.FDR",
+                    "N_experiments", "perm.p.all")]  }
+            fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
+                                          ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
+                                          "_launched_compound_level.csv"))
 
-            }
+          } # section of analysis specific scripts done.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            } } ) # lapply loop for CDR and GTP dataframes
+        } # function for thisgwas loop ends here
+      ) # lapply loop for CDR and GTP dataframes
 
 
     } # lapply function for all GWASs
   ) # lapply loop for all GWASs
 
+  # TODO: Compile the results and save as xls add this description as you do in MultiWAS package
+  # pert_iname: common name of compound
+  # clinical_phase: clinical phase of compound as per 2018-09-07
+  # Rank: Overall Rank of compound
+  # AvgRank: average of all average ranks of compounds during permutation analysis
+  # Compound.WRS.p: Wilcoxon rank sum test p value for placement out of all experiments and GWASs if applicable
+  # moa: mechanism of action
+  # Rank_moa_percentile: moa ranking percentile (only if 2 or more drugs per moa)
+  # MOA.WRS.P: Wilcoxon rank sum test p value for placement out of all compounds (were already ranked at compound level)
+  # target: molecular targets
+  # disease_area:
+  # indication:
+  # N_experiments: number of experiments for each TWAS
+  # perm.p.all: all perm.p values collapsed
+  # return(compound.level)
 
-
-
-
-
-
-
-
-
-
-
-
-    if (compound.type == "repurp_candidates") {
-
-      ################
-      # CDR pipeline #
-      ################
-
-      compound.level$Rank <- rank(compound.level$AvgRank) # replace Rank
-      compound.level      <- compound.level[order(Rank)]
-      # Aggregate at the level of compound
-      moa.repurp      <- compound.level[, c("moa", "AvgRank")]
-      moa.repurp[, N_compounds_moa := length(AvgRank), by = moa]
-      moa.repurp      = moa.repurp[N_compounds_moa > 1] # only if there are more than 2
-      moa.repurp      = moa.repurp[moa != "unknown"]
-      moa.avg.rank.sd = sd(moa.repurp$AvgRank)
-      # 96 unique MOA
-
-      message("Compiling the data...")
-      moa.repurp <- as.data.table(left_join(
-        moa.repurp,
-        do.call(rbind,pbmclapply(
-          unique(moa.repurp$moa),
-          FUN = function(i){
-            mw.res <- wilcox.test(
-              moa.repurp[moa == i]$AvgRank,
-              moa.repurp[moa != i]$AvgRank,
-              paired = FALSE,
-              conf.int = T) # conf.int = T is required to get the estimate
-            data.frame(
-              moa               = i,
-              MOA.MW.p          = mw.res$p.value,
-              MOA.pseudo.zscore = -1*(mw.res$estimate/moa.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
-            )
-          }, mc.cores = detectCores()-2 ))
-      ))
-      moa.repurp[, AvgRank_moa := mean(AvgRank), by = moa]
-      moa.repurp = unique(moa.repurp[, c("moa", "AvgRank_moa", "MOA.pseudo.zscore",
-                                         "N_compounds_moa", "MOA.MW.p")])
-      moa.repurp$Rank_moa <- rank(moa.repurp$AvgRank_moa)
-      # moa.repurp$Rank_moa_percentile <- my_percent(moa.repurp$Rank_moa_percentile/length(unique(moa.repurp$moa)))
-      # moa.repurp$Rank_moa_percentile <- moa.repurp$Rank_moa_percentile/length(unique(moa.repurp$moa))
-      moa.repurp <- moa.repurp[order(Rank_moa)]
-      moa.repurp$MOA.MW.FDR <- p.adjust(moa.repurp$MOA.MW.p, method = "fdr")
-      compound.level <- as.data.table(left_join(
-        compound.level, moa.repurp[, c("moa", "Rank_moa", "MOA.pseudo.zscore",
-                                       "MOA.MW.p", "MOA.MW.FDR")]))
-
-      # Filter to only Phase 3 and lauched
-      compound.level$Compound.MW.FDR <- as.numeric(NA)
-      compound.level[clinical_phase %in% c("Phase 3", "Launched")]$Compound.MW.FDR <-
-        p.adjust(compound.level[clinical_phase %in% c("Phase 3", "Launched")]$Compound.MW.p, method = "fdr")
-      # compound.level$Compound.MW.FDR <- p.adjust(compound.level$Compound.MW.p, method = "fdr")
-      compound.level <- compound.level[
-        , c("pert_iname", "clinical_phase", "Rank", "AvgRank", "Compound.MW.p",
-            "Compound.MW.FDR", "Compound.pseudo.zscore", "moa", "Rank_moa",
-            "MOA.pseudo.zscore", "MOA.MW.p", "MOA.MW.FDR", "target", "disease_area",
-            "indication", "N_experiments", "perm.p.all")]
-
-      fwrite(compound.level, paste0(output.dir, savename, "_", compound.type[1], "_P3_and_launched-compound_level.csv"))
-
-      compound.level <- compound.level[clinical_phase=="Launched"] # 201 compounds
-      compound.level$Rank <- rank(compound.level$Rank) # rerank
-      column.order <- names(compound.level)
-      moa.ranks <- unique(compound.level[,c("moa", "Rank_moa")])
-      moa.ranks <- moa.ranks[!is.na(Rank_moa)]
-      moa.ranks$MOA.Rank <- rank(moa.ranks$Rank_moa) # rerank
-      moa.ranks[, Rank_moa := NULL]
-      compound.level[, Rank_moa := NULL] # remove
-      compound.level <- as.data.table(dplyr::left_join(all.launched, moa.ranks))
-      fwrite(compound.level, paste0(output.dir, savename, "_", compound.type[1], "_launched-compound_level.csv"))
-
-    } else  {
-      ##################
-      # shRNA pipeline #
-      ##################
-      if (compound.type == "shRNA") {
-
-        compound.level$Rank <- rank(compound.level$AvgRank) # replace Rank
-        compound.level$Compound.MW.FDR <- p.adjust(compound.level$Compound.MW.p, method = "fdr")
-        compound.level <- compound.level[order(Rank)][
-          , c("pert_iname", "Rank", "AvgRank", "Compound.MW.p",
-              "Compound.pseudo.zscore", "Compound.MW.FDR",
-              "N_experiments", "perm.p.all")]  }
-      fwrite(compound.level, paste0(output.dir, savename, "_", compound.type[1], "-compound_level.csv"))
-    }
-
-
-
-# TODO: Compile the results and save as xls add this description as you do in MultiWAS package
-    # pert_iname: common name of compound
-    # clinical_phase: clinical phase of compound as per 2018-09-07
-    # Rank: Overall Rank of compound
-    # AvgRank: average of all average ranks of compounds during permutation analysis
-    # Compound.WRS.p: Wilcoxon rank sum test p value for placement out of all experiments and GWASs if applicable
-    # moa: mechanism of action
-    # Rank_moa_percentile: moa ranking percentile (only if 2 or more drugs per moa)
-    # MOA.WRS.P: Wilcoxon rank sum test p value for placement out of all compounds (were already ranked at compound level)
-    # target: molecular targets
-    # disease_area:
-    # indication:
-    # N_experiments: number of experiments for each TWAS
-    # perm.p.all: all perm.p values collapsed
-    return(compound.level)
-
-  # } # for loop for each GWAS ends here.
 } # function definition ends here.

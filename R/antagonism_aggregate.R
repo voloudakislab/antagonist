@@ -1,7 +1,7 @@
 #' Aggregate and prioritize compounds
 #'
 #' Aggregates across models. Run separately if you wish to separate models. Perturbagen Library used. We use the LINKS Phase II L1000 dataset (GSE70138) perturbagen reference library1. All inferred genes (AIG; n=12,328) are considered. Only “gold” signatures are considered. Imputed transcriptomes used. Analysis is limited to 17 imputed transcriptomes: (1) the B2 phenotype, and (2) EpiXcan tissue models that have at least one FDR-significant finding (FDR significance takes into account all COVID phenotypes and all 42 tissue models considered): Adipose: subcutaneous (GTEx), Adipose: subcutaneous (STARNET), Adipose: visceral (GTEx), Adipose: visceral (STARNET), Artery: Aorta (GTEx), Artery: Aorta (STARNET), Artery: Mammary (STARNET), Blood (STARNET), GI: esophagus, GE junction (GTEx), GI: esophagus, mucosa (GTEx), GI: muscularis (GTEx), GI: pancreas (GTEx), Muscle: skeletal (GTEx), Muscle: skeletal (STARNET), Reproductive: mammary tissue (GTEx), Respiratory: lung (GTEx), Skin: sun exposed lower leg (GTEx). Summarization and prioritization approach: From the original CDR pipeline2 (using 100 permutations), applied to the imputed transcriptome of each tissue, we obtain the average rank of the compound in antagonizing the GReX and the permutation p values. After pulling together all the results, we perform a Mann-Whithney U test for each candidate compound/ shRNA against all other compounds to see if the candidate’s rankings significantly deviate from the median rank. For each candidate we also estimate a GReX antagonism pseudo z-score, which is defined as the negative Hodges-Lehmann estimator (of the median difference between that specific candidate vs. the other candidates) divided by the standard deviation of the ranks of the compounds (-Hodges-Lehmann estimatorperturbagenSD average ranks of all perturbagens); a positive pseudo z-score is interpreted as a potential therapeutic candidate whereas a negative pseudo z-score would suggest that the shRNA is not antagonizing the imputed transcriptome and is thus likely to exacerbate the phenotype. Of note is that at this stage each candidate is compared against the other candidates but we can confirm that the candidate is effectively antagonizing the GReX by looking at the original permutation p values. FDR is estimated with the Benjamini–Hochberg procedure3. Additional information for chemical compound analyses: Analysis is limited to compounds eligible for drug repurposing (n=495). Drug information for the compounds under consideration (e.g. clinical phase, mechanism of action and molecular targets) was obtained from http://www.broadinstitute.org/repurposing (file date: 3/24/2020). For comparison with other studies; the compounds under question were compared with all the other compounds. For the mechanism of action comparison all compounds with a known mechanism of action represented with two or more candidates are considered. Final recommendations are for launched medications and FDR correction is applied only to launched compounds. Additional information for shRNA analyses: All shRNAs were considered.
-
+#' To run models separately a loop will have to pass arguments to limit.models.to (and keep NA if needed).
 #'
 #' @param dfs.to.process dfs to be loaded based on regular expression.
 #' @param limit.dfs.to regular expression for inclusion rlist of datasets.
@@ -78,8 +78,8 @@ aggregate_and_prioritize = function(
       rbind,
       lapply(
         x.gtp,
-        FUN = function(x) {
-          MultiWAS::return_df(x.gtp)
+        FUN = function(z) {
+          MultiWAS::return_df(z)
         }))
 
     # Keep at least min.experiments
@@ -118,7 +118,7 @@ aggregate_and_prioritize = function(
       MultiWAS::gv_dir.create(this.output.dir)
 
       ### MAIN SCRIPT ###
-      lapply(
+      pbapply::pblapply(
         list(x.cdr, x.gtp),
         FUN = function(x) {
           if (length(x) != 0) {
@@ -141,8 +141,8 @@ aggregate_and_prioritize = function(
               data.frame(Type = paste(x$pert_type,collapse = "|"),
                          AvgRank = as.numeric(x$AvgRank)),
               x = "AvgRank", add = "mean", xlab = "Signature AvgRank")
-            cowplot::ggsave2( paste0(this.output.dir, "/AvgRank_distribution_square.pdf") , d.plot, height = 4, width = 4 )
-            cowplot::ggsave2( paste0(this.output.dir, "/AvgRank_distribution_landscape.pdf") , d.plot, height = 3, width = 8 )
+            cowplot::ggsave2( paste0(this.output.dir, "/", thisgwas,"_", ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr", "gtp"), "_AvgRank_distribution_square.pdf") , d.plot, height = 4, width = 4 )
+            cowplot::ggsave2( paste0(this.output.dir, "/", thisgwas,"_", ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr", "gtp"), "_AvgRank_distribution_landscape.pdf") , d.plot, height = 3, width = 8 )
 
 
             ########################
@@ -411,10 +411,11 @@ aggregate_and_prioritize = function(
               compound.level <- compound.level[order(Rank)][
                 , c("pert_iname", "Rank", "AvgRank", "Compound.MW.p",
                     "Compound.pseudo.zscore", "Compound.MW.FDR",
-                    "N_experiments", "perm.p.all")]  }
-            fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
-                                          ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
-                                          "_launched_compound_level.csv"))
+                    "N_experiments", "perm.p.all")]
+              fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
+                                            ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
+                                            "_compound_level.csv"))
+              }
 
           } # section of analysis specific scripts done.
 

@@ -1,6 +1,6 @@
 #' Antagonism core script
 #'
-#' This is intended to run in your personal computer. There is a version that is optimized for LSF based clusters.
+#' This is intended to run in the minerva LSF custer. There is a version that is optimized for running locally.
 #' Runs the 5 methods for each GWAS / model_ID combination.
 #' The following 5 variables/methods need to be saved in splitting the drug matrices:
 #' 1. cor.pearson : Pearson (all)
@@ -30,11 +30,11 @@
 #' @param overwrite.intermediate default is not to overwrite the all.signatures.csv.gz (FALSE). This doesn't change from analysis to analysis.
 #' @param model.banlist.grep regular expression to exclude non-gene-level models. Default is: ":: Transcripts ::|:: H3K4me3 ::|:: H3K27ac ::|:: CA ::"
 #' @param prototyping number of signature files (each one has around 300) to test again for pipeline testing (default is NA which is all)
-#' @return N/A. Saves the figures
-#' @keywords visualization regional miami plot
+#' @return N/A. Saves required files
+#' @keywords antagonism step1 LSF
 #' @export
 #'
-perform_antagonism <- function(
+perform_antagonism_lsf_step_1_wrapper <- function(
   # Input
   df                     ,
   column.feature         = "feature",
@@ -65,21 +65,13 @@ perform_antagonism <- function(
   ##############################################################################
   # RUN STATISTICS FOR ALL SIGNATURES ##########################################
   ##############################################################################
-  # TODO: make a for loop that goes from trt_cp etc... Combine trt_sh and trt_xpr
 
-  # Prototyping
-  # signature.dir <- "/scratch/cmap_l1000_2021_01_28/"
-
-  # suppressMessages(library(mygene))
-  # suppressMessages(library(dplyr))
-  # suppressMessages(library(ggplot2))
-  # suppressMessages(library(Hmisc))
-
-  # library(data.table)
-
+  #######################
+  # Preparing Directories
+  MultiWAS::gv_dir.create(results.dir)
+  MultiWAS::gv_dir.create(paste0(results.dir, "intermediate.files/"))
   # Preparing TWAS
   df               <- MultiWAS::return_df(df)
-
   # Preparing columns
   df$feature   <- df[[column.feature]]
   df$zscore    <- df[[column.statistic]]
@@ -88,26 +80,20 @@ perform_antagonism <- function(
   df           <- df[zscore!=-Inf & zscore!=Inf]
   # gwas.model.combs <- unique(df[, c("gwas","model_ID") ])
   df <- df[, c("feature", "zscore", "gwas", "model_ID")]
-
   # Keeping only genes:
   if (length(grep(model.banlist.grep, df$model_ID))>0) {
     message(paste0("Currently expression banlist is: ", model.banlist.grep))
     message("Intention is to only keep genes")
     df <- df[-grep(model.banlist.grep, model_ID)] }
+  fwrite(df, paste0(results.dir, "intermediate.files/df.shaped.csv.gz"))
 
-
-  # Preparing Directories
-  MultiWAS::gv_dir.create(results.dir)
-  MultiWAS::gv_dir.create(paste0(results.dir, "intermediate.files/"))
-
+  ############################################
+  # Build project-specific signature inventory
   # Identifying signatures
-
   cmap.list <- list.files(signature.dir, full.names = T)
   # cmap=readRDS("/sc/hydra/projects/roussp01b/Wen/LINCS_Level5/eachDrugPhase2/1-300_cp.RDS")
   # to.process <- as.data.table(tidyr::crossing(to.process, data.table("cmap.file" = cmap.list)))
   if (!is.na(grep.sig.pattern[1])) mylist <- cmap.list[grep(grep.sig.pattern, cmap.list)] else mylist <- cmap.list
-
-
   # Create a signature inventory
   if (!file.exists(paste0(results.dir, "intermediate.files/signature.inventory.csv")) | overwrite.intermediate) {
   message("Building signature inventory by perturbagen type")
@@ -128,7 +114,6 @@ perform_antagonism <- function(
     message("Loading signature inventory by perturbagen type")
     signature.inventory <- fread(paste0(results.dir, "intermediate.files/signature.inventory.csv"))
   }
-
   if (!is.na(prototyping)) {
     mylist <- unlist(
       lapply(
@@ -137,6 +122,9 @@ perform_antagonism <- function(
           mylist[grep(x, mylist)][seq(prototyping)]
     }))
   }
+  saveRDS(mylist, paste0(results.dir, "intermediate.files/signature.inventory.list.RDS"))
+
+################################################################################
 
 
   message("Running five methods across each signature")

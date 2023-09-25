@@ -1,0 +1,70 @@
+######################
+# Perform antagonism #
+######################
+# consider using an alias for shortcut.
+
+###################################################
+# R library settings (minerva and package specific)
+env  <- "/sc/arion/projects/roussp01a/sanan/Rlibs/230919_R_4.2.0_MultiWAS_Antagonist"
+libs <- .libPaths()
+libs[3] <- env
+.libPaths(libs)
+
+###################
+# Handle parameters
+library(optparse)
+library(antagonist)
+option_list = list(
+  make_option(c("-r", "--recipe"),
+              type="character",
+              default=NULL,
+              help = "Point to recipe file for this project",
+              metavar = "character"),
+  make_option(c("-p", "--prototyping"),
+              type="character",
+              default="NA",
+              help = "Use a number to only run a subset of the signatures, e.g. 2 works well",
+              metavar = "character")
+);
+opt_parser = OptionParser(option_list=option_list);
+opt = parse_args(opt_parser);
+if (is.null(opt$recipe)){
+  print_help(opt_parser)
+  stop("At least one argument must be supplied (recipe).n", call.=FALSE)
+}
+
+
+#######################
+# Parse the recipe file
+recipe <- parse_recipe(opt$recipe)
+#  need to get directory information
+setwd(recipe$workding.directory)
+# Perform first step of the function
+
+########################
+# Run the wrapper script
+## I can add cluster files instead of specifying here
+## Alternatively here use a compacted list so that changes in the main package can be propagated more easily.
+perform_antagonism_lsf_step_1_wrapper(
+  # Input
+  df                     = recipe$df,
+  column.feature         = recipe$column.feature,
+  column.statistic       = recipe$column.statistic,
+  column.trait           = recipe$column.trait,
+  column.source          = recipe$column.source,
+  # Output
+  results.dir            = recipe$results.dir,
+  # Parameters
+  n.threads              = recipe$n.threads,
+  signature.dir          = recipe$signature.dir,
+  gene.anno.file         = recipe$gene.anno.file,
+  grep.sig.pattern       = recipe$grep.sig.pattern,
+  noperm                 = recipe$noperm,
+  thres.N.vector         = recipe$thres.N.vector,
+  sig.annotation         = recipe$sig.annotation,
+  overwrite.intermediate = recipe$overwrite.intermediate,
+  model.banlist.grep     = recipe$model.banlist.grep,
+  prototyping            = eval(parse(text = opt$prototyping))
+)
+
+

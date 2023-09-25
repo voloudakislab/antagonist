@@ -1,0 +1,17 @@
+variable,value,Notes
+df,NULL,"twas or DGE dataframe, can provide path."
+working.directory,NULL,
+column.feature,feature,
+column.statistic,zscore,
+column.trait,gwas,
+column.source,model_ID,
+results.dir,results/GTP_CDR/,
+n.threads,parallel::detectCores()-2,use eval parse text to convert to number
+signature.dir,/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/eachDrug/,
+gene.anno.file,/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/geneinfo_beta.txt,
+grep.sig.pattern,trt_cp|trt_sh|trt_oe|trt_xpr,
+noperm,100,use eval parse text to convert to number
+thres.N.vector,"c(50,100,250,500)",This expects a vector so use eval parse text to convert to vector in function
+sig.annotation,SIG.INFO.20211120,use eval parse text to recover object
+overwrite.intermediate,TRUE,use eval parse text to get logical
+model.banlist.grep,:: Transcripts ::|:: H3K4me3 ::|:: H3K27ac ::|:: CA ::,

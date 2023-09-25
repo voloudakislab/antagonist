@@ -11,6 +11,13 @@ Column      | description
 `gwas`      | trait name
 `model_ID`  | disease signature source, e.g. microglia, DLPFC, meta-analysis, etc.
 
+# Resources disclaimer
+
+
+
+# STEP 1: Run antagonism
+For one trait-tissue combination, it takes about 23,800 thread-minutes on an Intel 10th gen core.
+
 # Parameters for external resource file location
 ## This should be idea
 parent.signature.dir = "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/"

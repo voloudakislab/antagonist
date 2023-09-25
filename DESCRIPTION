@@ -27,7 +27,8 @@ Imports:
     ggpubr,
     cowplot,
     cmapR,
-    Hmisc
+    Hmisc,
+    optparse
 Remotes:
     voloudakislab/MultiWAS
 Suggests:

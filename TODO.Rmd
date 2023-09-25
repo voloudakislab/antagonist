@@ -1,0 +1,7 @@
+# TODO
+- Fix the aggregation script
+- Fix the LSF implementation
+    - Figure out resource allocation in Minerva
+    - Parallelize as much as possible.
+        - Break by sig.file.
+        - generate temp scripts and submit them.

@@ -184,7 +184,7 @@ perform_antagonism_lsf_S01_wrapper <- function(
         )
         if (!dryrun) { # if dry run then don't execute the scripts
           system(paste(b.sub, paste0(job.id, ".plink.sh")))
-        } else { writeLines(b.sub, "bsub.txt") }
+        } else { message(paste0("Would have submitted ", job.id, ".plink.sh here")) }
         #sink()
       } # signature loop ends
     )

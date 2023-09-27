@@ -32,9 +32,10 @@ user.email <- readline("What is your github email?\n")
 user.PAT   <- readline("What is your github token?\n")
 
 libs <- .libPaths()
-libs[3] <- envName
-libs2 <- libs[c(3,1)]
-.libPaths(libs)
+libs[3] <- envName # replaces user path /hpc/users/[user]/.Rlib
+libs2 <- libs[c(3,1)] # excludes bioconductor (2) and shared R libraries 
+# .libPaths(libs) # doesn't work
+.libPaths(libs2) # works
 
 usethis::use_git_config(user.name = user.name, user.email = user.email)
 credentials::set_github_pat(user.PAT,force_new =T) # Will need to reenter PAT in command line. Minerva often defaults to environmental PAT which can cause conflicts

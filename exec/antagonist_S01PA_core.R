@@ -52,7 +52,7 @@ if (is.null(opt$cmapfile)){
 # Parse the recipe file and optparse arguments
 recipe <- parse_recipe(opt$recipe)
 #  need to get directory information
-setwd(recipe$workding.directory)
+setwd(recipe$working.directory)
 # Perform first step of the function
 i <- opt$cmapfile
 file.prefix <- sub("\\.RDS$", "", basename(i))

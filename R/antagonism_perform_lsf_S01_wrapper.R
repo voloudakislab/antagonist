@@ -162,7 +162,7 @@ perform_antagonism_lsf_S01_wrapper <- function(
         # add ml R
         job.name   <- paste0(sub("\\.RDS$", "", basename(i)))
         ## Populate the files.info with this new information
-        b.sub <- paste0('-P acc_va-biobank -q premium -n ', n.threads,
+        b.sub <- paste0('bsub -P acc_va-biobank -q premium -n ', n.threads,
                         ' -W 1:00 -J ', job.name, ' -R span[hosts=1] -R rusage[mem=3000]
           -oo ',results.dir, '/intermediate.files/logs/S01A/', job.name, '.out ',
                         '-eo ',results.dir, '/intermediate.files/logs/S01A/', job.name , '.err ',

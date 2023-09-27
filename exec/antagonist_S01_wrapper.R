@@ -34,7 +34,7 @@ option_list = list(
               metavar = "character"),
   make_option(c("-d", "--dryrun"),
               type="character",
-              default=FALSE,
+              default="FALSE",
               help = "If dryrun is TRUE then the scripts are generated but not submitted",
               metavar = "character")
 );
@@ -61,7 +61,7 @@ perform_antagonism_lsf_S01_wrapper(
   # wrapper input
   working.directory      = recipe$working.directory,
   recipe.file            = opt$recipe,
-  dryrun                 = eval(parse(opt$dryrun)),
+  dryrun                 = eval(parse(text = opt$dryrun)),
   # Input
   df                     = recipe$df,
   column.feature         = recipe$column.feature,

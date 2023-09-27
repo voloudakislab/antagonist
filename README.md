@@ -23,7 +23,7 @@ Column      | description
 ```
 ml pigz/2.3.1
 ml git
-
+ml R
 R
 
 envName    <- "/sc/arion/projects/roussp01a/sanan/Rlibs/230919_R_4.2.0_MultiWAS_Antagonist"
@@ -52,6 +52,41 @@ remotes::install_github("voloudakislab/MultiWAS", build = FALSE)
 remotes::install_github("voloudakislab/antagonist", build = FALSE)
 ```
 
+# Updating the package
+
+## Minerva
+Interactive bash
+```
+ml pigz/2.3.1
+ml git
+ml R
+R
+```
+Interactive R
+```
+# Run this line by line
+user.name  <- readline("What is your github username?\n")
+user.email <- readline("What is your github email?\n")
+user.PAT   <- readline("What is your github token?\n")
+
+# 
+envName    <- "/sc/arion/projects/roussp01a/sanan/Rlibs/230919_R_4.2.0_MultiWAS_Antagonist"
+libs <- .libPaths()
+libs[3] <- envName # replaces user path /hpc/users/[user]/.Rlib
+libs2 <- libs[c(3,1)] # excludes bioconductor (2) and shared R libraries 
+.libPaths(libs2) # works
+usethis::use_git_config(user.name = user.name, user.email = user.email)
+
+# Run this and provide the PAT
+credentials::set_github_pat(user.PAT,force_new =T) # Will need to reenter PAT in command line. Minerva often defaults to environmental PAT which can cause conflicts
+
+# Run this
+options(timeout=9999999)
+.libPaths(libs2)
+remotes::install_github("voloudakislab/antagonist", build = FALSE, upgrade = "never")
+```
+
+
 # Resources disclaimer
 
 
@@ -72,8 +107,11 @@ perform_antagonism()
 For now only works on minerva. Potentially adding ability to run in other platforms in the future.
 Todo:
 - make logs folder
+- sh run ml R in bsub
 
 ```
+bsub -P acc_va-biobank -q premium -n 30 -W 24:00 -Ip /bin/bash
+ml R
 library=/sc/arion/projects/roussp01a/sanan/Rlibs/230919_R_4.2.0_MultiWAS_Antagonist
 # library=/home/georgios/R/x86_64-pc-linux-gnu-library/4.2
 recipe=/sc/arion/projects/va-biobank/PROJECTS/2023_09_microglia_DGE_gtp_cdr/project.recipe.csv

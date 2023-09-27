@@ -61,7 +61,7 @@ perform_antagonism_lsf_S01_wrapper(
   # wrapper input
   working.directory      = recipe$working.directory,
   recipe.file            = opt$recipe,
-  dryrun                 = opt$dryrun,
+  dryrun                 = eval(parse(opt$dryrun)),
   # Input
   df                     = recipe$df,
   column.feature         = recipe$column.feature,

@@ -166,7 +166,7 @@ perform_antagonism_lsf_S01_wrapper <- function(
                         ' -W 1:00 -J ', job.name, ' -R span[hosts=1] -R rusage[mem=3000]
           -oo ',results.dir, '/intermediate.files/logs/S01A/', job.name, '.out ',
                         '-eo ',results.dir, '/intermediate.files/logs/S01A/', job.name , '.err ',
-                        '-L /bin/bash', ' <')
+                        '-L /bin/bash', ' < ')
         # prepare script
         thiscommand <- paste0(
           "cd ", working.directory, "\n",
@@ -182,9 +182,17 @@ perform_antagonism_lsf_S01_wrapper <- function(
           paste0(results.dir, "/intermediate.files/scripts/S01A/",
                  job.name, ".sh")
         )
+        submission.command <- paste0(
+          b.sub, results.dir, "/intermediate.files/scripts/S01A/", job.name, ".sh")
+
         if (!dryrun) { # if dry run then don't execute the scripts
-          system(paste(b.sub, paste0(job.name, ".plink.sh")))
-        } else { message(paste0("Would have submitted ", job.name, ".plink.sh here")) }
+          system(submission.command)
+        } else {
+          writeLines(
+            submission.command,
+            paste0(results.dir, "/intermediate.files/scripts/S01A/",
+                   job.name, ".dryrun.txt") )
+          }
         #sink()
       } # signature loop ends
     )

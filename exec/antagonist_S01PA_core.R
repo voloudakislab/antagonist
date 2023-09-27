@@ -62,7 +62,19 @@ file.prefix <- sub("\\.RDS$", "", basename(i))
 # Load the necessary files
 results.dir <- recipe$results.dir
 n.threads   <- recipe$n.threads
-df <- fread(paste0(results.dir, "intermediate.files/df.shaped.csv.gz"))
+df          <- fread(paste0(results.dir, "intermediate.files/df.shaped.csv.gz"))
+## Other script parameters
+signature.dir          <- recipe$signature.dir
+gene.anno.file         = recipe$gene.anno.file
+grep.sig.pattern       = recipe$grep.sig.pattern
+noperm                 = recipe$noperm
+thres.N.vector         = recipe$thres.N.vector
+sig.annotation         = recipe$sig.annotation
+overwrite.intermediate = recipe$overwrite.intermediate
+model.banlist.grep     = recipe$model.banlist.grep
+
+
+
 
 
 ##########################

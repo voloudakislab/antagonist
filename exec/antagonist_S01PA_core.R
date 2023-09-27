@@ -142,7 +142,7 @@ signature <- mclapply(
 ) # mclapply loop for all signatures
 
 fwrite(
-  signature,
+  do.call(rbind,signature),
   paste0(results.dir, "/intermediate.files/5rank/S01A/",
          file.prefix,".csv.gz")
   )

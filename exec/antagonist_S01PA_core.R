@@ -60,6 +60,7 @@ file.prefix <- sub("\\.RDS$", "", basename(i))
 
 ##########################
 # Load the necessary files
+results.dir <- recipe$results.dir
 df <- fread(paste0(results.dir, "intermediate.files/df.shaped.csv.gz"))
 
 

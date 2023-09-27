@@ -85,7 +85,10 @@ options(timeout=9999999)
 .libPaths(libs2)
 remotes::install_github("voloudakislab/antagonist", build = FALSE, upgrade = "never")
 ```
-
+To reload the package in an interactive R session
+```
+MultiWAS::reload_package("antagonist")
+```
 
 # Resources disclaimer
 

@@ -61,6 +61,7 @@ file.prefix <- sub("\\.RDS$", "", basename(i))
 ##########################
 # Load the necessary files
 results.dir <- recipe$results.dir
+n.threads   <- recipe$n.threads
 df <- fread(paste0(results.dir, "intermediate.files/df.shaped.csv.gz"))
 
 
@@ -126,7 +127,7 @@ signature <- mclapply(
     return(cbind(cbind(output.left, output.right), output.perm))
   },
   mc.cores = ifelse(n.threads<1,1,n.threads)
-) # mclapply loop for all signattures
+) # mclapply loop for all signatures
 
 fwrite(
   signature,

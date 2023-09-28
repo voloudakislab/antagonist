@@ -64,7 +64,7 @@ results.dir <- recipe$results.dir
 n.threads   <- recipe$n.threads
 df          <- fread(paste0(results.dir, "intermediate.files/df.shaped.csv.gz"))
 ## Other script parameters
-signature.dir          <- recipe$signature.dir
+signature.dir          = recipe$signature.dir
 gene.anno.file         = recipe$gene.anno.file
 grep.sig.pattern       = recipe$grep.sig.pattern
 noperm                 = recipe$noperm
@@ -138,8 +138,29 @@ signature <- pbmclapply(
   mc.cores = ifelse(n.threads<1,1,n.threads)
 ) # mclapply loop for all signatures
 
+signature <-do.call(rbind,signature)
+
+# Easy way to go recursively
+breakdown <- unique(signature[,c("gwas","model_ID")])
+lapply(
+  unique(breakdown$gwas),
+  FUN = function(folder) {
+    MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/5rank/S01A/",MultiWAS::make_java_safe(folder)))
+    lapply(
+      unique(breakdown[gwas==folder]$model_ID),
+      FUN = function(subfolder) {
+        MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/5rank/S01A/",MultiWAS::make_java_safe(folder),
+                                       "/", MultiWAS::make_java_safe(subfolder)))
+        fwrite(
+          signature[gwas == folder & model_ID == subfolder],
+          paste0(results.dir, "/intermediate.files/5rank/S01A/",MultiWAS::make_java_safe(folder),
+                 "/", MultiWAS::make_java_safe(subfolder), "/", file.prefix,".csv.gz") )
+      }) # second loop function
+  } ) # first loop function
+
+# Save master file (needed for checks)
 fwrite(
-  do.call(rbind,signature),
+  signature,
   paste0(results.dir, "/intermediate.files/5rank/S01A/",
          file.prefix,".csv.gz")
   )

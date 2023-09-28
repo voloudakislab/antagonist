@@ -95,6 +95,9 @@ perform_antagonism_lsf_S01_wrapper <- function(
   MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/5rank/S01A"))
   MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/scripts/S01A"))
   MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/logs/S01A"))
+  MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/5rank/S01B"))
+  MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/scripts/S01B"))
+  MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/logs/S01B"))
   # Preparing TWAS
   df               <- MultiWAS::return_df(df)
   # Preparing columns
@@ -163,8 +166,9 @@ perform_antagonism_lsf_S01_wrapper <- function(
         # add ml R
         job.name   <- paste0(sub("\\.RDS$", "", basename(i)))
         ## Populate the files.info with this new information
+        # Usually takes 30' for about 50 gwas - model combinations
         b.sub <- paste0('bsub -P acc_va-biobank -q premium -n ', n.threads,
-                        ' -W 1:00 -J ', job.name, ' -R span[hosts=1] -R rusage[mem=3000] -oo '
+                        ' -W 2:00 -J ', job.name, ' -R span[hosts=1] -R rusage[mem=3000] -oo '
                         ,results.dir, '/intermediate.files/logs/S01A/', job.name, '.out ',
                         '-eo ',results.dir, '/intermediate.files/logs/S01A/', job.name , '.err ',
                         '-L /bin/bash', ' < ')
@@ -199,20 +203,33 @@ perform_antagonism_lsf_S01_wrapper <- function(
     )
   } # this only runs if the output doesn't exist
 
-  ###############################################
+  ##############################################################################
   # Collect all the signatures from 5-rank method
-  # message("Waiting for the rank to be completed...")
-  #
-  # percent.complete <- 0
-  # while (percent.complete < 1) {
-  #   Sys.sleep(300) # wait for 5'
-  #   percent.complete <- # calculate percent complete
-  # }
-  #
-  #
-  # message("Collecting the individual signature files")
 
+  ###
+  message("Waiting for the rank to be completed...")
+  percent.complete <- 0
+  # Initializes the progress bar
+  pb <- txtProgressBar(min = 0,      # Minimum value of the progress bar
+                       max = 100, # Maximum value of the progress bar
+                       style = 3,    # Progress bar style (also available style = 1 and style = 2)
+                       width = 50,   # Progress bar width. Defaults to getOption("width")
+                       char = "=")   # Character used to create the bar
+  while (percent.complete < 100) {
+    # Sys.sleep(5)
+    Sys.sleep(300) # wait for 5' before checking the files
+    percent.complete <- 100 * sum(as.numeric(
+      sub("\\.RDS","",basename(mylist)) %in%
+        sub("\\.csv\\.gz", "", basename(list.files(paste0(results.dir, "/intermediate.files/5rank/S01A/"))))
+    )) / length(mylist) # calculate percent complete
+    setTxtProgressBar(pb, percent.complete)
+  }
+  close(pb) # Close the connection
 
+  ###
+  message("Collecting the individual signature files")
+
+  # list.dirs(paste0(results.dir, "/intermediate.files/5rank/S01A/"))
 
 
 #

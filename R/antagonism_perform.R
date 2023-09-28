@@ -307,7 +307,7 @@ perform_antagonism <- function(
                 (ncol(five.rank.all)-1)
             } ))
 
-          ### Compiling the per gwas, model_ID and sig_od results.
+          ### Compiling the per gwas, model_ID and sig_id results.
           final.rank <- data.table(
             "gwas"         = gwas.model.combos$gwas[j],
             "model_ID"     = gwas.model.combos$model_ID[j],

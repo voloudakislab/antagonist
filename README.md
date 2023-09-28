@@ -120,10 +120,19 @@ library=/sc/arion/projects/roussp01a/sanan/Rlibs/230919_R_4.2.0_MultiWAS_Antagon
 recipe=/sc/arion/projects/va-biobank/PROJECTS/2023_09_microglia_DGE_gtp_cdr/project.recipe.csv
 
 # Step 1 mothership
+
+bsub -J Ant_S01_mothership -P acc_va-biobank -q premium -n 20 -R span[hosts=1] \
+-R rusage[mem=3000] -W 1440 --oo logs/S01mothership.out -oe logs/S01mothership.err \
+-L /bin/bash Rscript --verbose $library/antagonist/exec/antagonist_S01_wrapper.sh --recipe $recipe \
+--prototyping 2
+
 bsub -J Ant_S01_mothership -P acc_va-biobank -q premium -n 20 -R span[hosts=1] \
 -R rusage[mem=3000] -W 1440 --oo logs/S01mothership.out -oe logs/S01mothership.err \
 -L /bin/bash Rscript --verbose $library/antagonist/exec/antagonist_S01_wrapper.R --recipe $recipe \
 --prototyping 2
+
+
+
 # $library/exec/antagonist_S01_wrapper.R --recipe $recipe --prototyping 2 # if you want to run with just two signature files for troubleshooting
 
 # Step 2 mothership

@@ -76,6 +76,7 @@ perform_antagonism_lsf_S01_wrapper <- function(
   ######################
   # HARDCODED PARAMETERS
   ## Look here if the script fails
+  setwd(working.directory)
   R.lib.dir <- "/sc/arion/projects/roussp01a/sanan/Rlibs/230919_R_4.2.0_MultiWAS_Antagonist"
   types.of.data <- data.table(
     text.pattern = c("trt_cp", 	"trt_sh", "trt_oe", "trt_xpr", "trt_misc", "ctl"),
@@ -163,15 +164,15 @@ perform_antagonism_lsf_S01_wrapper <- function(
         job.name   <- paste0(sub("\\.RDS$", "", basename(i)))
         ## Populate the files.info with this new information
         b.sub <- paste0('bsub -P acc_va-biobank -q premium -n ', n.threads,
-                        ' -W 1:00 -J ', job.name, ' -R span[hosts=1] -R rusage[mem=3000]
-          -oo ',results.dir, '/intermediate.files/logs/S01A/', job.name, '.out ',
+                        ' -W 1:00 -J ', job.name, ' -R span[hosts=1] -R rusage[mem=3000] -oo '
+                        ,results.dir, '/intermediate.files/logs/S01A/', job.name, '.out ',
                         '-eo ',results.dir, '/intermediate.files/logs/S01A/', job.name , '.err ',
                         '-L /bin/bash', ' < ')
         # prepare script
         thiscommand <- paste0(
           "cd ", working.directory, "\n",
           "ml R", "\n",
-          "Rscript ", R.lib.dir, "/antagonist/exec/antagonist_S01PA_core.R", " ",
+          "Rscript --verbose  ", R.lib.dir, "/antagonist/exec/antagonist_S01PA_core.R", " ",
           "--recipe ", recipe.file, " ",
           "--cmapfile ", i
         )
@@ -197,6 +198,21 @@ perform_antagonism_lsf_S01_wrapper <- function(
       } # signature loop ends
     )
   } # this only runs if the output doesn't exist
+
+  ###############################################
+  # Collect all the signatures from 5-rank method
+  # message("Waiting for the rank to be completed...")
+  #
+  # percent.complete <- 0
+  # while (percent.complete < 1) {
+  #   Sys.sleep(300) # wait for 5'
+  #   percent.complete <- # calculate percent complete
+  # }
+  #
+  #
+  # message("Collecting the individual signature files")
+
+
 
 
 #

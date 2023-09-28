@@ -74,9 +74,6 @@ overwrite.intermediate = recipe$overwrite.intermediate
 model.banlist.grep     = recipe$model.banlist.grep
 
 
-
-
-
 ##########################
 # Run the five-rank method
 
@@ -108,7 +105,7 @@ to.process <- as.data.table(tidyr::expand_grid(
   sig_id)) #, "thres.N.Vector" = c(NA,thres.N.vector)))
 
 # Run loop for each signature in the file
-signature <- mclapply(
+signature <- pbmclapply(
   seq(nrow(to.process)),
   # seq(5),
   FUN = function(j){

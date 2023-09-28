@@ -45,6 +45,13 @@ if (is.null(opt$recipe)){
   stop("A recipe file must be provided", call.=FALSE)
 }
 
+# Debugging example
+# opt <- list()
+# opt$recipe <- "/sc/arion/projects/va-biobank/PROJECTS/2023_09_microglia_DGE_gtp_cdr/project.recipe.csv"
+# opt$dryrun <- "TRUE"
+# opt$prototyping <- "TRUE"
+
+
 
 #######################
 # Parse the recipe file

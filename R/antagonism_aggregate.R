@@ -2,6 +2,7 @@
 #'
 #' Aggregates across models. Run separately if you wish to separate models. Perturbagen Library used. We use the LINKS Phase II L1000 dataset (GSE70138) perturbagen reference library1. All inferred genes (AIG; n=12,328) are considered. Only “gold” signatures are considered. Imputed transcriptomes used. Analysis is limited to 17 imputed transcriptomes: (1) the B2 phenotype, and (2) EpiXcan tissue models that have at least one FDR-significant finding (FDR significance takes into account all COVID phenotypes and all 42 tissue models considered): Adipose: subcutaneous (GTEx), Adipose: subcutaneous (STARNET), Adipose: visceral (GTEx), Adipose: visceral (STARNET), Artery: Aorta (GTEx), Artery: Aorta (STARNET), Artery: Mammary (STARNET), Blood (STARNET), GI: esophagus, GE junction (GTEx), GI: esophagus, mucosa (GTEx), GI: muscularis (GTEx), GI: pancreas (GTEx), Muscle: skeletal (GTEx), Muscle: skeletal (STARNET), Reproductive: mammary tissue (GTEx), Respiratory: lung (GTEx), Skin: sun exposed lower leg (GTEx). Summarization and prioritization approach: From the original CDR pipeline2 (using 100 permutations), applied to the imputed transcriptome of each tissue, we obtain the average rank of the compound in antagonizing the GReX and the permutation p values. After pulling together all the results, we perform a Mann-Whithney U test for each candidate compound/ shRNA against all other compounds to see if the candidate’s rankings significantly deviate from the median rank. For each candidate we also estimate a GReX antagonism pseudo z-score, which is defined as the negative Hodges-Lehmann estimator (of the median difference between that specific candidate vs. the other candidates) divided by the standard deviation of the ranks of the compounds (-Hodges-Lehmann estimatorperturbagenSD average ranks of all perturbagens); a positive pseudo z-score is interpreted as a potential therapeutic candidate whereas a negative pseudo z-score would suggest that the shRNA is not antagonizing the imputed transcriptome and is thus likely to exacerbate the phenotype. Of note is that at this stage each candidate is compared against the other candidates but we can confirm that the candidate is effectively antagonizing the GReX by looking at the original permutation p values. FDR is estimated with the Benjamini–Hochberg procedure3. Additional information for chemical compound analyses: Analysis is limited to compounds eligible for drug repurposing (n=495). Drug information for the compounds under consideration (e.g. clinical phase, mechanism of action and molecular targets) was obtained from http://www.broadinstitute.org/repurposing (file date: 3/24/2020). For comparison with other studies; the compounds under question were compared with all the other compounds. For the mechanism of action comparison all compounds with a known mechanism of action represented with two or more candidates are considered. Final recommendations are for launched medications and FDR correction is applied only to launched compounds. Additional information for shRNA analyses: All shRNAs were considered.
 #' To run models separately a loop will have to pass arguments to limit.models.to (and keep NA if needed).
+#' Consider "clinical_phase" column options are "Launched", "Phase 3", "Phase 2/Phase 3", "Phase 2", "Phase 1/Phase 2", "Phase 1", "Preclinical" and "Withdrawn". A sensible list for CDR is "Launched|Phase 3|Phase 2"
 #'
 #' @param dfs.to.process dfs to be loaded based on regular expression.
 #' @param limit.dfs.to regular expression for inclusion rlist of datasets.
@@ -155,7 +156,9 @@ aggregate_and_prioritize = function(
             # Calculate MW statistic (WRST)
             x <- as.data.table(dplyr::left_join(
               x,
-              do.call(rbind,pbmclapply(
+              do.call(
+                rbind,
+                pbmclapply(
                 unique(x$pert_iname),
                 FUN = function(i){
                   mw.res <- wilcox.test(
@@ -209,7 +212,13 @@ aggregate_and_prioritize = function(
               # Exclude those that don't have moa
               moa.repurp <- moa.repurp[!is.na(moa)]
               moa.repurp      = moa.repurp[moa != "unknown"]
-              moa.repurp <- moa.repurp[, .(moa = unlist(tstrsplit(moa, "\\|", type.convert = TRUE))), by = "AvgRank"]
+              # Break multiple moas
+              # moa.repurp <- moa.repurp[, .(moa = unlist(tstrsplit(moa, "\\|", type.convert = TRUE))), by = "AvgRank"] doesn't handle NULL well
+              moa.repurp <- moa.repurp[, .(moa = {
+                allmoa <- unlist(tstrsplit(moa, "\\|", type.convert = TRUE))
+                class(allmoa) <- 'character' # to handle NULL and unable to deduct class issue
+                allmoa
+              }), by = "AvgRank"] # to handle NULLs
               moa.repurp[, N_compounds_moa := length(AvgRank), by = moa]
               moa.repurp      = moa.repurp[N_compounds_moa > 1] # only if there are more than 2
               moa.avg.rank.sd = sd(moa.repurp$AvgRank)
@@ -252,7 +261,12 @@ aggregate_and_prioritize = function(
               # Exclude those that don't have target
               target.repurp <- target.repurp[!is.na(target)]
               target.repurp      = target.repurp[target != "unknown"]
-              target.repurp <- target.repurp[, .(target = unlist(tstrsplit(target, "\\|", type.convert = TRUE))), by = "AvgRank"]
+              # target.repurp <- target.repurp[, .(target = unlist(tstrsplit(target, "\\|", type.convert = TRUE))), by = "AvgRank"]
+              target.repurp <- target.repurp[, .(target = {
+                alltargets <- unlist(tstrsplit(target, "\\|", type.convert = TRUE))
+                class(alltargets) <- 'character' # to handle NULL and unable to deduct class issue
+                alltargets
+              }), by = "AvgRank"] # to handle NULLs
               target.repurp[, N_compounds_target := length(AvgRank), by = target]
               target.repurp      = target.repurp[N_compounds_target > 1] # only if there are more than 2
               target.avg.rank.sd = sd(target.repurp$AvgRank)
@@ -293,7 +307,12 @@ aggregate_and_prioritize = function(
               # Exclude those that don't have disease_area
               disease_area.repurp <- disease_area.repurp[!is.na(disease_area)]
               disease_area.repurp      = disease_area.repurp[disease_area != "unknown"]
-              disease_area.repurp <- disease_area.repurp[, .(disease_area = unlist(tstrsplit(disease_area, "\\|", type.convert = TRUE))), by = "AvgRank"]
+              # disease_area.repurp <- disease_area.repurp[, .(disease_area = unlist(tstrsplit(disease_area, "\\|", type.convert = TRUE))), by = "AvgRank"]
+              disease_area.repurp <- disease_area.repurp[, .(disease_area = {
+                disease_areas <- unlist(tstrsplit(disease_area, "\\|", type.convert = TRUE))
+                class(disease_areas) <- 'character' # to handle NULL and unable to deduct class issue
+                disease_areas
+              }), by = "AvgRank"] # to handle NULLs
               disease_area.repurp[, N_compounds_disease_area := length(AvgRank), by = disease_area]
               disease_area.repurp      = disease_area.repurp[N_compounds_disease_area > 1] # only if there are more than 2
               disease_area.avg.rank.sd = sd(disease_area.repurp$AvgRank)
@@ -333,7 +352,12 @@ aggregate_and_prioritize = function(
               # Exclude those that don't have indication
               indication.repurp <- indication.repurp[!is.na(indication)]
               indication.repurp      = indication.repurp[indication != "unknown"]
-              indication.repurp <- indication.repurp[, .(indication = unlist(tstrsplit(indication, "\\|", type.convert = TRUE))), by = "AvgRank"]
+              # indication.repurp <- indication.repurp[, .(indication = unlist(tstrsplit(indication, "\\|", type.convert = TRUE))), by = "AvgRank"]
+              indication.repurp <- indication.repurp[, .(indication = {
+                indications <- unlist(tstrsplit(indication, "\\|", type.convert = TRUE))
+                class(indications) <- 'character' # to handle NULL and unable to deduct class issue
+                indications
+              }), by = "AvgRank"] # to handle NULLs
               indication.repurp[, N_compounds_indication := length(AvgRank), by = indication]
               indication.repurp      = indication.repurp[N_compounds_indication > 1] # only if there are more than 2
               indication.avg.rank.sd = sd(indication.repurp$AvgRank)

@@ -5,7 +5,7 @@ ref.cell.file <- system.file(
   package="antagonist")
 
 # Cell line information.
-# TODO: is there a more updaated list?
+# TODO: is there a more updated list?
 repurposing_cell_lines <- function(
     cell.file = ref.cell.file
 ){

@@ -18,7 +18,7 @@
 #' @param column.feature expected input is ENSEMBL ID and currently only works with genes (default: feature)
 #' @param column.statistic z-score statistic (default: zscore)
 #' @param column.trait trait name (default: gwas)
-#' @param column.source disease signature source, e.g. microglia, DLPFC, meta-analysis, etc. (default: model_ID)
+#' @param column.source disease signature source, e.g. microglia, DLPFC, meta-analysis, etc. (default: model_ID). For non-twas inputs make sure there is a column describing the input.
 #' @param results.dir Results main dir. Subdirectories will be created
 #' @param n.threads number f threads for multicore strategy, default is detectCores()-2
 #' @param signature.dir Location of signature files. Consider saving locally to speed things up (e.g. /scratch/cmap_l1000_2021_01_28/). Look into the split_gctx on how to generate these files.
@@ -36,7 +36,7 @@
 #'
 perform_antagonism <- function(
   # Input
-  df                     ,
+  df                     = paste0("output/2.METAXCAN/", basename(getwd()),"_df.all.annotated.onlytranscripts.csv.gz"),
   column.feature         = "feature",
   column.statistic       = "zscore",
   column.trait           = "gwas",
@@ -48,9 +48,11 @@ perform_antagonism <- function(
   signature.dir          = "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/eachDrug/", # /scratch/cmap_l1000_2021_01_28/
   gene.anno.file         = "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/geneinfo_beta.txt",
   grep.sig.pattern       = "trt_cp|trt_sh|trt_oe|trt_xpr",
+  # grep.cdr.pattern       = "Launched|Phase 3|Phase 2", # NA for no filtering
   noperm                 = 100, #
   thres.N.vector         = c(50,100,250,500),
   sig.annotation         = SIG.INFO.20211120,
+  # trt_cp.annotation      = TRT_CP.INFO.20200324,
   overwrite.intermediate = TRUE,
   model.banlist.grep     = ":: Transcripts ::|:: H3K4me3 ::|:: H3K27ac ::|:: CA ::",
   prototyping            = NA
@@ -89,7 +91,7 @@ perform_antagonism <- function(
   # gwas.model.combs <- unique(df[, c("gwas","model_ID") ])
   df <- df[, c("feature", "zscore", "gwas", "model_ID")]
 
-  # Keeping only genes:
+  # Keeping only genes - this is based on banlinst:
   if (length(grep(model.banlist.grep, df$model_ID))>0) {
     message(paste0("Currently expression banlist is: ", model.banlist.grep))
     message("Intention is to only keep genes")
@@ -137,7 +139,6 @@ perform_antagonism <- function(
           mylist[grep(x, mylist)][seq(prototyping)]
     }))
   }
-
 
   message("Running five methods across each signature")
   if (!file.exists(paste0(paste0(results.dir, "intermediate.files/all.signatures.csv.gz"))) | overwrite.intermediate) {

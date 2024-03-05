@@ -60,10 +60,6 @@ showcase_method_cdr_gtp <- function(
   gtp.cdr.dir                   = "results/GTP_CDR/",
   gene.anno.file                = "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/geneinfo_beta.txt"
 ){
-
-  # Prototyping
-  perturbagen = "benactyzine"
-
   # finding what the signature is
   sig.info <- MultiWAS::return_df(sig.info)
   sig.info <- sig.info[pert_iname == perturbagen]

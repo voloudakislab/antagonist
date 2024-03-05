@@ -9,8 +9,8 @@ showcase_method_cdr_gtp(
   twas.model = NA,
   twas.trait = NA,
   perturbagen.sig_id = NA,
-  twas =
-    "output/2.METAXCAN/CDR_Colllaborative_Merit_df.all.annotated.onlytranscripts.csv.gz",
+  twas = paste0("output/2.METAXCAN/", basename(getwd()),
+    "_df.all.annotated.onlytranscripts.csv.gz"),
   twas.feature.column.name = "feature",
   twas.feature.name.column.name = "feature_name",
   twas.zscore.column.name = "zscore",

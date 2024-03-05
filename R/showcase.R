@@ -47,7 +47,7 @@ showcase_method_cdr_gtp <- function(
   twas.trait                    = NA,
   perturbagen.sig_id            = NA,
   # Disease signature
-  twas                          = "output/2.METAXCAN/CDR_Colllaborative_Merit_df.all.annotated.onlytranscripts.csv.gz", # conventionally TWAS
+  twas                          = paste0("output/2.METAXCAN/", basename(getwd()), "_df.all.annotated.onlytranscripts.csv.gz"), # conventionally TWAS
   twas.feature.column.name      = "feature", # Has to be ENSEMBL ids so that it can also keep only the genes
   twas.feature.name.column.name = "feature_name",
   twas.zscore.column.name       = "zscore",
@@ -73,22 +73,26 @@ showcase_method_cdr_gtp <- function(
   twas$model_ID     <- twas[[twas.model.column.name]]
   twas$gwas         <- twas[[twas.trait.column.name]]
   twas              <- twas[grep("^ENSG", feature)] # limit analysis to genes
+
   ## Handle gwas
-  if (length(unique(twas$gwas)) > 1) { stop(paste0(
-    "There are more than one gwas/traits, please provide one of: \n",
-    paste(unique(twas$gwas), collapse = "\n"), "\n",
-    "Provide it as a twas.trait variable" )) } else {
-      if (is.na(twas.trait)) twas.trait <- unique(twas$gwas)
-      twas <- twas[gwas == twas.trait]
-    }
+  if (is.na(twas.trait)) {
+    if (length(unique(twas$gwas)) > 1) {
+      stop(paste0(
+      "There are more than one gwas/traits, please provide one of: \n",
+      paste(unique(twas$gwas), collapse = "\n"), "\n",
+      "Provide it as a twas.trait variable" ))
+      } else { twas.trait <- unique(twas$gwas) }}
+  twas <- twas[gwas == twas.trait]
+
   ## Handle model_ID
-  if (length(unique(twas$model_ID)) > 1) { stop(paste0(
-    "There are more than one models/conditions, please provide one of: \n",
-    paste(unique(twas$model_ID), collapse = "\n"), "\n",
-    "Provide it as a twas.model variable" )) } else {
-      if (is.na(twas.model)) twas.model <- unique(twas$model_ID)
-      twas <- twas[model_ID == twas.model]
-    }
+  if (is.na(twas.model)) {
+    if (length(unique(twas$model_ID)) > 1) {
+      stop(paste0(
+        "There are more than one models/conditions, please provide one of: \n",
+        paste(unique(twas$model_ID), collapse = "\n"), "\n",
+        "Provide it as a twas.model variable" ))
+    } else { twas.model <- unique(twas$model_ID) }}
+  twas <- twas[model_ID == twas.model]
 
   # Handle sig_id
   if (length(perturbagen.sig_id)>1) stop("only one perturbagen.sig_id is supported") else {
@@ -105,7 +109,7 @@ showcase_method_cdr_gtp <- function(
 
   # Get compound info
   signature.location <- fread(paste0(
-    results.dir, "intermediate.files/signature.location.csv"))
+    gtp.cdr.dir, "intermediate.files/signature.location.csv"))
   i <- signature.location[sig_id == perturbagen.sig_id]$filename
   cmap <- readRDS(i)
   if (grepl("trt_oe", i)) cmap <- cmap * -1 # So that the signatures can be integrated with the knockdown experiments.
@@ -145,7 +149,7 @@ showcase_method_cdr_gtp <- function(
                                # usethislabel   = "Text",
                                xlab           = unique(paste0("TWAS zscore for ", twas.vs.compounds$tissue)),
                                ylab           = paste0(perturbagen, " signature for ", sig.info[sig_id == perturbagen.sig_id]$cell_id))
-  this.filename <- paste0(results.dir, "intermediate.files/",
+  this.filename <- paste0(gtp.cdr.dir, "intermediate.files/",
                           MultiWAS::make_java_safe(twas.trait), ".",
                           MultiWAS::make_java_safe(twas.model), ".",
                           MultiWAS::make_java_safe(perturbagen), ".",
@@ -153,5 +157,5 @@ showcase_method_cdr_gtp <- function(
   ggsave((paste0(this.filename, ".pdf")), p1, width = 6, height = 6)
   ggsave((paste0(this.filename, ".png")), p1, width = 6, height = 6, units = "in")
   fwrite(twas.vs.compounds, paste0(this.filename, ".csv"))
-
+  fwrite(sig.info[sig_id == perturbagen.sig_id], paste0(this.filename, ".sig_info.csv"))
 }

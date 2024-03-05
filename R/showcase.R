@@ -36,6 +36,7 @@
 #' @param sig.info File with perturbagen signature information (default: SIG.INFO.20211120)
 #' @param gtp.cdr.dir Directory where GTP/CDR saves its results (default: "results/GTP_CDR/")
 #' @param gene.anno.file Gene annotation file (provided from L1000)
+#' @param figure.assay.type What assay are we using default is "TWAS" other example would be "DGE"
 #' @return N/A. Saves the figures and csv file
 #' @keywords visualization cdr gtp showcase
 #' @export
@@ -58,7 +59,8 @@ showcase_method_cdr_gtp <- function(
   sig.info                      = SIG.INFO.20211120,
   # signature.inventory           = "results/GTP_CDR/intermediate.files/signature.inventory.csv",
   gtp.cdr.dir                   = "results/GTP_CDR/",
-  gene.anno.file                = "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/geneinfo_beta.txt"
+  gene.anno.file                = "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/geneinfo_beta.txt",
+  figure.assay.type             = "TWAS"
 ){
   # finding what the signature is
   sig.info <- MultiWAS::return_df(sig.info)
@@ -147,15 +149,38 @@ showcase_method_cdr_gtp <- function(
                                color.group    = "Group",
                                custom.colors  = c("black", MultiWAS::vector_to_colors(unique(twas.vs.compounds$Group))),
                                # usethislabel   = "Text",
-                               xlab           = unique(paste0("TWAS zscore for ", twas.vs.compounds$tissue)),
+                               xlab           = paste0(figure.assay.type, " zscore for ",
+                                                       ifelse("tissue" %in% names(twas.vs.compounds),
+                                                              unique(twas.vs.compounds$tissue),
+                                                              unique(twas.vs.compounds$model_ID))
+                                                       ),
                                ylab           = paste0(perturbagen, " signature for ", sig.info[sig_id == perturbagen.sig_id]$cell_id))
+  p1 <- p1 + guides(color=guide_legend(nrow=2, byrow=TRUE))
   this.filename <- paste0(gtp.cdr.dir, "intermediate.files/",
                           MultiWAS::make_java_safe(twas.trait), ".",
                           MultiWAS::make_java_safe(twas.model), ".",
                           MultiWAS::make_java_safe(perturbagen), ".",
                           MultiWAS::make_java_safe(perturbagen.sig_id))
-  ggsave((paste0(this.filename, ".pdf")), p1, width = 6, height = 6)
-  ggsave((paste0(this.filename, ".png")), p1, width = 6, height = 6, units = "in")
+  ggsave((paste0(this.filename, ".pdf")), p1, width = 4, height = 4)
+  ggsave((paste0(this.filename, ".png")), p1, width = 4, height = 4, units = "in")
   fwrite(twas.vs.compounds, paste0(this.filename, ".csv"))
   fwrite(sig.info[sig_id == perturbagen.sig_id], paste0(this.filename, ".sig_info.csv"))
+
+  # Density plot
+  sig.ranks <- fread(paste0(gtp.cdr.dir, twas.trait, "/ALL/", twas.trait, "_cdr_signature_level.csv.gz"))
+  sig.ranks$compound <- ifelse(sig.ranks$pert_iname == perturbagen, perturbagen, paste0("not ", perturbagen))
+  sig.ranks <- sig.ranks[gwas == twas.trait & model_ID == twas.model]
+  mu <- ddply(sig.ranks, "compound", summarise, grp.median=median(AvgRank))
+  p2 <- ggplot(sig.ranks, aes(x=AvgRank, fill=compound)) +
+    geom_density(alpha=0.4) +
+    geom_vline(data=mu, aes(xintercept=grp.median, color=compound),
+               linetype="dashed") +
+    scale_color_manual(values = MultiWAS::vector_to_colors(unique(sig.ranks$compound))) +
+    scale_fill_manual(values = MultiWAS::vector_to_colors(unique(sig.ranks$compound))) +
+    xlab("Signature Average Rank") + ylab("Density") +
+    theme_classic() +
+    theme(legend.position = c(0.8, 0.8))
+  ggsave((paste0(this.filename, "_density.pdf")), p2, width = 6, height = 1.8)
+  ggsave((paste0(this.filename, "_density.png")), p2, width = 6, height = 1.8, units = "in")
+
 }

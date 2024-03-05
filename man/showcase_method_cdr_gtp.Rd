@@ -19,7 +19,8 @@ showcase_method_cdr_gtp(
   sig.info = SIG.INFO.20211120,
   gtp.cdr.dir = "results/GTP_CDR/",
   gene.anno.file =
-    "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/geneinfo_beta.txt"
+    "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/geneinfo_beta.txt",
+  figure.assay.type = "TWAS"
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ showcase_method_cdr_gtp(
 \item{gtp.cdr.dir}{Directory where GTP/CDR saves its results (default: "results/GTP_CDR/")}
 
 \item{gene.anno.file}{Gene annotation file (provided from L1000)}
+
+\item{figure.assay.type}{What assay are we using default is "TWAS" other example would be "DGE"}
 }
 \value{
 N/A. Saves the figures and csv file

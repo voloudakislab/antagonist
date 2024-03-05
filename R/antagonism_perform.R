@@ -11,8 +11,10 @@
 #' This is a multithreaded data.table based re-write of So HC et al. Analysis of
 #'  genome-wide association data highlights candidates for drug repositioning in
 #'  psychiatry. Nat Neurosci. 2017 Oct;20(10):1342-1349. PMID: 28805813.
+#' Analysis is run for each GWAS (trait) - model_ID (imputation model or specific analysis) pair
 #' It has been adapted to run for signatures (individual parameters) vs.
 #' summarized compound scores.
+#'
 #'
 #' @param df twas data frame
 #' @param column.feature expected input is ENSEMBL ID and currently only works with genes (default: feature)
@@ -112,7 +114,20 @@ perform_antagonism <- function(
 
   # Create a signature inventory
   if (!file.exists(paste0(results.dir, "intermediate.files/signature.inventory.csv")) | overwrite.intermediate) {
-  message("Building signature inventory by perturbagen type")
+  # This part saves a list of signature file name table.
+    message("Building signature location inventory")
+  fwrite(do.call(rbind, pbmclapply(
+    stats::setNames(mylist, mylist),
+    FUN = function(x) {
+      data.table(
+        sig_id   = colnames(readRDS(x)),
+        filename = x )
+      }, mc.cores = n.threads
+  )), paste0(results.dir, "intermediate.files/signature.location.csv"))
+
+
+  # This part makes a signature inventory
+    message("Building signature inventory by perturbagen type")
   signature.inventory <- pbmclapply(
     stats::setNames(mylist, sub("_[[:digit:]]+\\.[[:digit:]]+\\.RDS", "", basename(mylist)) ),
     FUN = function(x) {colnames(readRDS(x))},

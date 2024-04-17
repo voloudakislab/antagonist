@@ -13,6 +13,7 @@
 #' @param cell.file Compound file; default is cell_lkines.csv from clue.io
 #' @param ref.drug File with information for compounds (trt_cp) such as mechanism of action, indication etc. Look at data-raw if you want to generate a similar file
 #' @param ref.cell File with informaiton about the cell lines used in the perturbagen library.
+#' @param iterative.tissue when having more than one tissue/cell type aggregate for each tissue as well.
 #' @param min.experiments.n Min experiment per perturbagen (default is 2)
 #' @param n.cores Number of cores to use if multithreaded
 #' @return Compound level summary
@@ -28,6 +29,8 @@ aggregate_and_prioritize = function(
     ref.drug                        = TRT_CP.INFO.20200324,
     # Cell experiments
     ref.cell                        = CELL.LINE.INFO,
+    # Iterative
+    iterative.tissue                = TRUE,
     # parameters
     min.experiments.n               = 2,
     n.cores                         = parallel::detectCores()-2
@@ -127,321 +130,333 @@ aggregate_and_prioritize = function(
             # Limit to GWAS of interest
             x <- x[gwas == thisgwas]
 
-            # Limit to models of interest
+            # Limit to models of interest and implement iterative approach
             if (!is.na(limit.models.to[1])) x <- x[model_ID %in% limit.models.to]
-            modelprefix <- as.character(MultiWAS::make_java_safe(paste(limit.models.to, collapse = "_X_")))
-            if (modelprefix == "NA") modelprefix <- "ALL"
-            this.output.dir <- paste0(
-              this.output.dir, "/",
-              modelprefix, "/")
-            MultiWAS::gv_dir.create(this.output.dir)
+            if (iterative.tissue) limit.models.to <- list(limit.models.to, unique(x$model_ID))
+            all.limit.models.to
 
-            ###########################
-            # Density plot for Avg rank
-            d.plot <- ggpubr::ggdensity( # https://rpkgs.datanovia.com/ggpubr/reference/ggdensity.html
-              data.frame(Type = paste(x$pert_type,collapse = "|"),
-                         AvgRank = as.numeric(x$AvgRank)),
-              x = "AvgRank", add = "mean", xlab = "Signature AvgRank")
-            cowplot::ggsave2( paste0(this.output.dir, "/", thisgwas,"_", ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr", "gtp"), "_AvgRank_distribution_square.pdf") , d.plot, height = 4, width = 4 )
-            cowplot::ggsave2( paste0(this.output.dir, "/", thisgwas,"_", ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr", "gtp"), "_AvgRank_distribution_landscape.pdf") , d.plot, height = 3, width = 8 )
+            # Now run all the model_IDs
+            pbapply::pblapply(
+              all.limit.models.to,
+              FUN = function(limit.models.to) {
+                message(paste0("Now working on: ", paste(limit.models.to, collapse = ", ")))
+                modelprefix <- as.character(MultiWAS::make_java_safe(paste(limit.models.to, collapse = "_X_")))
+                if (modelprefix == "NA") modelprefix <- "ALL"
+                this.output.dir <- paste0(
+                  this.output.dir, "/",
+                  modelprefix, "/")
+                MultiWAS::gv_dir.create(this.output.dir)
 
-
-            ########################
-            # Calculating statistics
-            # hist(x$AvgRank) # Seems to be following the gaussian distribution
-            # avg.rank.mean <- mean(x$AvgRank)
-            avg.rank.sd   <- sd(x$AvgRank)
-            message("Calculating the MW statistic (WRST)...")
-
-            # Calculate MW statistic (WRST)
-            x <- as.data.table(dplyr::left_join(
-              x,
-              do.call(
-                rbind,
-                pbmclapply(
-                unique(x$pert_iname),
-                FUN = function(i){
-                  mw.res <- wilcox.test(
-                    x[pert_iname == i]$AvgRank,
-                    x[pert_iname != i]$AvgRank,
-                    paired = FALSE,
-                    conf.int = T) # conf.int = T is required to get the estimate
-                  data.frame(
-                    pert_iname             = i,
-                    Compound.MW.p          = mw.res$p.value,
-                    Compound.pseudo.zscore = -1*(mw.res$estimate/avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
-                  )
-                }, mc.cores = n.cores ))
-            ))
-
-            fwrite(x, paste0(this.output.dir, "/", thisgwas,"_",
-                             ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
-                             "_signature_level.csv.gz"))
-
-            # Aggregate at the level of compound
-            x$Rank <- as.numeric(NA) # reset
-            x[, AvgRank := mean(AvgRank), by = pert_iname]
-            x[, perm.p.all:= paste(sort(perm.p), collapse=";"), by = pert_iname ] # save permutation values
+                ###########################
+                # Density plot for Avg rank
+                d.plot <- ggpubr::ggdensity( # https://rpkgs.datanovia.com/ggpubr/reference/ggdensity.html
+                  data.frame(Type = paste(x$pert_type,collapse = "|"),
+                             AvgRank = as.numeric(x$AvgRank)),
+                  x = "AvgRank", add = "mean", xlab = "Signature AvgRank")
+                cowplot::ggsave2( paste0(this.output.dir, "/", thisgwas,"_", ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr", "gtp"), "_AvgRank_distribution_square.pdf") , d.plot, height = 4, width = 4 )
+                cowplot::ggsave2( paste0(this.output.dir, "/", thisgwas,"_", ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr", "gtp"), "_AvgRank_distribution_landscape.pdf") , d.plot, height = 3, width = 8 )
 
 
-            if (unique(x$pert_type)[1] == "trt_cp") {
-              ## CDR specific code
-              compound.level = unique(x[, c(
-                "gwas",
-                "pert_iname", "Rank", "AvgRank", "Compound.MW.p", "Compound.pseudo.zscore",
-                "clinical_phase",   "moa", "target", "disease_area", "indication",
-                "N_experiments", "perm.p.all")])
-            } else {
-              compound.level = unique(x[, c(
-                "gwas",
-                "pert_iname", "Rank", "AvgRank", "Compound.MW.p",
-                "Compound.pseudo.zscore",  "N_experiments", "perm.p.all")])
-              ## GTP specific code
-            }
+                ########################
+                # Calculating statistics
+                # hist(x$AvgRank) # Seems to be following the gaussian distribution
+                # avg.rank.mean <- mean(x$AvgRank)
+                avg.rank.sd   <- sd(x$AvgRank)
+                message("Calculating the MW statistic (WRST)...")
 
-            compound.level$Rank <- rank(compound.level$AvgRank) # replace Rank
-            compound.level      <- compound.level[order(Rank)]
+                # Calculate MW statistic (WRST)
+                x <- as.data.table(dplyr::left_join(
+                  x,
+                  do.call(
+                    rbind,
+                    pbmclapply(
+                      unique(x$pert_iname),
+                      FUN = function(i){
+                        mw.res <- wilcox.test(
+                          x[pert_iname == i]$AvgRank,
+                          x[pert_iname != i]$AvgRank,
+                          paired = FALSE,
+                          conf.int = T) # conf.int = T is required to get the estimate
+                        data.frame(
+                          pert_iname             = i,
+                          Compound.MW.p          = mw.res$p.value,
+                          Compound.pseudo.zscore = -1*(mw.res$estimate/avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                        )
+                      }, mc.cores = n.cores ))
+                ))
 
-            if (unique(x$pert_type)[1] == "trt_cp") {
-              ## CDR specific code for moa (Mechanism of action)
+                fwrite(x, paste0(this.output.dir, "/", thisgwas,"_",
+                                 ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
+                                 "_signature_level.csv.gz"))
 
-              #### MOA ####
-              # Aggregate at the level of moa
-              moa.repurp      <- compound.level[, c("moa", "AvgRank")]
-              # https://stackoverflow.com/questions/61684587/r-data-table-split-a-row-into-multiple-rows-based-on-string-values
-              # Exclude those that don't have moa
-              moa.repurp <- moa.repurp[!is.na(moa)]
-              moa.repurp      = moa.repurp[moa != "unknown"]
-              # Break multiple moas
-              # moa.repurp <- moa.repurp[, .(moa = unlist(tstrsplit(moa, "\\|", type.convert = TRUE))), by = "AvgRank"] doesn't handle NULL well
-              moa.repurp <- moa.repurp[, .(moa = {
-                allmoa <- unlist(tstrsplit(moa, "\\|", type.convert = TRUE))
-                class(allmoa) <- 'character' # to handle NULL and unable to deduct class issue
-                allmoa
-              }), by = "AvgRank"] # to handle NULLs
-              moa.repurp[, N_compounds_moa := length(AvgRank), by = moa]
-              moa.repurp      = moa.repurp[N_compounds_moa > 1] # only if there are more than 2
-              moa.avg.rank.sd = sd(moa.repurp$AvgRank)
-              # 96 unique MOA
-
-              message("Running mechanism of action enrichment...")
-              moa.repurp <- as.data.table(dplyr::left_join(
-                moa.repurp,
-                do.call(rbind,pbmclapply(
-                  unique(moa.repurp$moa),
-                  FUN = function(i){
-                    mw.res <- wilcox.test(
-                      moa.repurp[moa == i]$AvgRank,
-                      moa.repurp[moa != i]$AvgRank,
-                      paired = FALSE,
-                      conf.int = T) # conf.int = T is required to get the estimate
-                    data.frame(
-                      moa               = i,
-                      MOA.MW.p          = mw.res$p.value,
-                      MOA.pseudo.zscore = -1*(mw.res$estimate/moa.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
-                    )
-                  }, mc.cores = detectCores()-2 ))
-              ))
-              moa.repurp[, AvgRank_moa := mean(AvgRank), by = moa]
-              moa.repurp = unique(moa.repurp[, c("moa", "AvgRank_moa", "MOA.pseudo.zscore",
-                                                 "N_compounds_moa", "MOA.MW.p")])
-              moa.repurp$Rank_moa <- rank(moa.repurp$AvgRank_moa)
-              # moa.repurp$Rank_moa_percentile <- my_percent(moa.repurp$Rank_moa_percentile/length(unique(moa.repurp$moa)))
-              # moa.repurp$Rank_moa_percentile <- moa.repurp$Rank_moa_percentile/length(unique(moa.repurp$moa))
-              moa.repurp <- moa.repurp[order(Rank_moa)]
-              moa.repurp$MOA.MW.FDR <- p.adjust(moa.repurp$MOA.MW.p, method = "fdr")
-              fwrite(moa.repurp, paste0(this.output.dir, "/", thisgwas, "_",
-                                        ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
-                                        "_moa_level.csv"))
-
-              #### TARGET ####
-              # Aggregate at the level of target
-              target.repurp      <- compound.level[, c("target", "AvgRank")]
-              # https://stackoverflow.com/questions/61684587/r-data-table-split-a-row-into-multiple-rows-based-on-string-values
-              # Exclude those that don't have target
-              target.repurp <- target.repurp[!is.na(target)]
-              target.repurp      = target.repurp[target != "unknown"]
-              # target.repurp <- target.repurp[, .(target = unlist(tstrsplit(target, "\\|", type.convert = TRUE))), by = "AvgRank"]
-              target.repurp <- target.repurp[, .(target = {
-                alltargets <- unlist(tstrsplit(target, "\\|", type.convert = TRUE))
-                class(alltargets) <- 'character' # to handle NULL and unable to deduct class issue
-                alltargets
-              }), by = "AvgRank"] # to handle NULLs
-              target.repurp[, N_compounds_target := length(AvgRank), by = target]
-              target.repurp      = target.repurp[N_compounds_target > 1] # only if there are more than 2
-              target.avg.rank.sd = sd(target.repurp$AvgRank)
-
-              message("Running target enrichment...")
-              target.repurp <- as.data.table(dplyr::left_join(
-                target.repurp,
-                do.call(rbind,pbmclapply(
-                  unique(target.repurp$target),
-                  FUN = function(i){
-                    mw.res <- wilcox.test(
-                      target.repurp[target == i]$AvgRank,
-                      target.repurp[target != i]$AvgRank,
-                      paired = FALSE,
-                      conf.int = T) # conf.int = T is required to get the estimate
-                    data.frame(
-                      target               = i,
-                      target.MW.p          = mw.res$p.value,
-                      target.pseudo.zscore = -1*(mw.res$estimate/target.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
-                    )
-                  }, mc.cores = detectCores()-2 ))
-              ))
-              target.repurp[, AvgRank_target := mean(AvgRank), by = target]
-              target.repurp = unique(target.repurp[, c("target", "AvgRank_target", "target.pseudo.zscore",
-                                                       "N_compounds_target", "target.MW.p")])
-              target.repurp$Rank_target <- rank(target.repurp$AvgRank_target)
-              target.repurp <- target.repurp[order(Rank_target)]
-              target.repurp$target.MW.FDR <- p.adjust(target.repurp$target.MW.p, method = "fdr")
-              fwrite(target.repurp, paste0(this.output.dir, "/", thisgwas, "_",
-                                           ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
-                                           "_target_level.csv"))
+                # Aggregate at the level of compound
+                x$Rank <- as.numeric(NA) # reset
+                x[, AvgRank := mean(AvgRank), by = pert_iname]
+                x[, perm.p.all:= paste(sort(perm.p), collapse=";"), by = pert_iname ] # save permutation values
 
 
-              #### disease_area ####
-              # Aggregate at the level of disease_area
-              disease_area.repurp      <- compound.level[, c("disease_area", "AvgRank")]
-              # https://stackoverflow.com/questions/61684587/r-data-table-split-a-row-into-multiple-rows-based-on-string-values
-              # Exclude those that don't have disease_area
-              disease_area.repurp <- disease_area.repurp[!is.na(disease_area)]
-              disease_area.repurp      = disease_area.repurp[disease_area != "unknown"]
-              # disease_area.repurp <- disease_area.repurp[, .(disease_area = unlist(tstrsplit(disease_area, "\\|", type.convert = TRUE))), by = "AvgRank"]
-              disease_area.repurp <- disease_area.repurp[, .(disease_area = {
-                disease_areas <- unlist(tstrsplit(disease_area, "\\|", type.convert = TRUE))
-                class(disease_areas) <- 'character' # to handle NULL and unable to deduct class issue
-                disease_areas
-              }), by = "AvgRank"] # to handle NULLs
-              disease_area.repurp[, N_compounds_disease_area := length(AvgRank), by = disease_area]
-              disease_area.repurp      = disease_area.repurp[N_compounds_disease_area > 1] # only if there are more than 2
-              disease_area.avg.rank.sd = sd(disease_area.repurp$AvgRank)
+                if (unique(x$pert_type)[1] == "trt_cp") {
+                  ## CDR specific code
+                  compound.level = unique(x[, c(
+                    "gwas",
+                    "pert_iname", "Rank", "AvgRank", "Compound.MW.p", "Compound.pseudo.zscore",
+                    "clinical_phase",   "moa", "target", "disease_area", "indication",
+                    "N_experiments", "perm.p.all")])
+                } else {
+                  compound.level = unique(x[, c(
+                    "gwas",
+                    "pert_iname", "Rank", "AvgRank", "Compound.MW.p",
+                    "Compound.pseudo.zscore",  "N_experiments", "perm.p.all")])
+                  ## GTP specific code
+                }
 
-              message("Running disease area enrichment...")
-              disease_area.repurp <- as.data.table(dplyr::left_join(
-                disease_area.repurp,
-                do.call(rbind,pbmclapply(
-                  unique(disease_area.repurp$disease_area),
-                  FUN = function(i){
-                    mw.res <- wilcox.test(
-                      disease_area.repurp[disease_area == i]$AvgRank,
-                      disease_area.repurp[disease_area != i]$AvgRank,
-                      paired = FALSE,
-                      conf.int = T) # conf.int = T is required to get the estimate
-                    data.frame(
-                      disease_area               = i,
-                      disease_area.MW.p          = mw.res$p.value,
-                      disease_area.pseudo.zscore = -1*(mw.res$estimate/disease_area.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
-                    )
-                  }, mc.cores = detectCores()-2 ))
-              ))
-              disease_area.repurp[, AvgRank_disease_area := mean(AvgRank), by = disease_area]
-              disease_area.repurp = unique(disease_area.repurp[, c("disease_area", "AvgRank_disease_area", "disease_area.pseudo.zscore",
-                                                                   "N_compounds_disease_area", "disease_area.MW.p")])
-              disease_area.repurp$Rank_disease_area <- rank(disease_area.repurp$AvgRank_disease_area)
-              disease_area.repurp <- disease_area.repurp[order(Rank_disease_area)]
-              disease_area.repurp$disease_area.MW.FDR <- p.adjust(disease_area.repurp$disease_area.MW.p, method = "fdr")
-              fwrite(disease_area.repurp, paste0(this.output.dir, "/", thisgwas, "_",
-                                                 ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
-                                                 "_disease_area_level.csv"))
+                compound.level$Rank <- rank(compound.level$AvgRank) # replace Rank
+                compound.level      <- compound.level[order(Rank)]
 
-              #### indication ####
-              # Aggregate at the level of indication
-              indication.repurp      <- compound.level[, c("indication", "AvgRank")]
-              # https://stackoverflow.com/questions/61684587/r-data-table-split-a-row-into-multiple-rows-based-on-string-values
-              # Exclude those that don't have indication
-              indication.repurp <- indication.repurp[!is.na(indication)]
-              indication.repurp      = indication.repurp[indication != "unknown"]
-              # indication.repurp <- indication.repurp[, .(indication = unlist(tstrsplit(indication, "\\|", type.convert = TRUE))), by = "AvgRank"]
-              indication.repurp <- indication.repurp[, .(indication = {
-                indications <- unlist(tstrsplit(indication, "\\|", type.convert = TRUE))
-                class(indications) <- 'character' # to handle NULL and unable to deduct class issue
-                indications
-              }), by = "AvgRank"] # to handle NULLs
-              indication.repurp[, N_compounds_indication := length(AvgRank), by = indication]
-              indication.repurp      = indication.repurp[N_compounds_indication > 1] # only if there are more than 2
-              indication.avg.rank.sd = sd(indication.repurp$AvgRank)
+                if (unique(x$pert_type)[1] == "trt_cp") {
+                  ## CDR specific code for moa (Mechanism of action)
 
-              message("Running indication enrichment...")
-              indication.repurp <- as.data.table(dplyr::left_join(
-                indication.repurp,
-                do.call(rbind,pbmclapply(
-                  unique(indication.repurp$indication),
-                  FUN = function(i){
-                    mw.res <- wilcox.test(
-                      indication.repurp[indication == i]$AvgRank,
-                      indication.repurp[indication != i]$AvgRank,
-                      paired = FALSE,
-                      conf.int = T) # conf.int = T is required to get the estimate
-                    data.frame(
-                      indication               = i,
-                      indication.MW.p          = mw.res$p.value,
-                      indication.pseudo.zscore = -1*(mw.res$estimate/indication.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
-                    )
-                  }, mc.cores = detectCores()-2 ))
-              ))
-              indication.repurp[, AvgRank_indication := mean(AvgRank), by = indication]
-              indication.repurp = unique(indication.repurp[, c("indication", "AvgRank_indication", "indication.pseudo.zscore",
-                                                               "N_compounds_indication", "indication.MW.p")])
-              indication.repurp$Rank_indication <- rank(indication.repurp$AvgRank_indication)
-              indication.repurp <- indication.repurp[order(Rank_indication)]
-              indication.repurp$indication.MW.FDR <- p.adjust(indication.repurp$indication.MW.p, method = "fdr")
-              fwrite(indication.repurp, paste0(this.output.dir, "/", thisgwas, "_",
+                  #### MOA ####
+                  # Aggregate at the level of moa
+                  moa.repurp      <- compound.level[, c("moa", "AvgRank")]
+                  # https://stackoverflow.com/questions/61684587/r-data-table-split-a-row-into-multiple-rows-based-on-string-values
+                  # Exclude those that don't have moa
+                  moa.repurp <- moa.repurp[!is.na(moa)]
+                  moa.repurp      = moa.repurp[moa != "unknown"]
+                  # Break multiple moas
+                  # moa.repurp <- moa.repurp[, .(moa = unlist(tstrsplit(moa, "\\|", type.convert = TRUE))), by = "AvgRank"] doesn't handle NULL well
+                  moa.repurp <- moa.repurp[, .(moa = {
+                    allmoa <- unlist(tstrsplit(moa, "\\|", type.convert = TRUE))
+                    class(allmoa) <- 'character' # to handle NULL and unable to deduct class issue
+                    allmoa
+                  }), by = "AvgRank"] # to handle NULLs
+                  moa.repurp[, N_compounds_moa := length(AvgRank), by = moa]
+                  moa.repurp      = moa.repurp[N_compounds_moa > 1] # only if there are more than 2
+                  moa.avg.rank.sd = sd(moa.repurp$AvgRank)
+                  # 96 unique MOA
+
+                  message("Running mechanism of action enrichment...")
+                  moa.repurp <- as.data.table(dplyr::left_join(
+                    moa.repurp,
+                    do.call(rbind,pbmclapply(
+                      unique(moa.repurp$moa),
+                      FUN = function(i){
+                        mw.res <- wilcox.test(
+                          moa.repurp[moa == i]$AvgRank,
+                          moa.repurp[moa != i]$AvgRank,
+                          paired = FALSE,
+                          conf.int = T) # conf.int = T is required to get the estimate
+                        data.frame(
+                          moa               = i,
+                          MOA.MW.p          = mw.res$p.value,
+                          MOA.pseudo.zscore = -1*(mw.res$estimate/moa.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                        )
+                      }, mc.cores = detectCores()-2 ))
+                  ))
+                  moa.repurp[, AvgRank_moa := mean(AvgRank), by = moa]
+                  moa.repurp = unique(moa.repurp[, c("moa", "AvgRank_moa", "MOA.pseudo.zscore",
+                                                     "N_compounds_moa", "MOA.MW.p")])
+                  moa.repurp$Rank_moa <- rank(moa.repurp$AvgRank_moa)
+                  # moa.repurp$Rank_moa_percentile <- my_percent(moa.repurp$Rank_moa_percentile/length(unique(moa.repurp$moa)))
+                  # moa.repurp$Rank_moa_percentile <- moa.repurp$Rank_moa_percentile/length(unique(moa.repurp$moa))
+                  moa.repurp <- moa.repurp[order(Rank_moa)]
+                  moa.repurp$MOA.MW.FDR <- p.adjust(moa.repurp$MOA.MW.p, method = "fdr")
+                  fwrite(moa.repurp, paste0(this.output.dir, "/", thisgwas, "_",
+                                            ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
+                                            "_moa_level.csv"))
+
+                  #### TARGET ####
+                  # Aggregate at the level of target
+                  target.repurp      <- compound.level[, c("target", "AvgRank")]
+                  # https://stackoverflow.com/questions/61684587/r-data-table-split-a-row-into-multiple-rows-based-on-string-values
+                  # Exclude those that don't have target
+                  target.repurp <- target.repurp[!is.na(target)]
+                  target.repurp      = target.repurp[target != "unknown"]
+                  # target.repurp <- target.repurp[, .(target = unlist(tstrsplit(target, "\\|", type.convert = TRUE))), by = "AvgRank"]
+                  target.repurp <- target.repurp[, .(target = {
+                    alltargets <- unlist(tstrsplit(target, "\\|", type.convert = TRUE))
+                    class(alltargets) <- 'character' # to handle NULL and unable to deduct class issue
+                    alltargets
+                  }), by = "AvgRank"] # to handle NULLs
+                  target.repurp[, N_compounds_target := length(AvgRank), by = target]
+                  target.repurp      = target.repurp[N_compounds_target > 1] # only if there are more than 2
+                  target.avg.rank.sd = sd(target.repurp$AvgRank)
+
+                  message("Running target enrichment...")
+                  target.repurp <- as.data.table(dplyr::left_join(
+                    target.repurp,
+                    do.call(rbind,pbmclapply(
+                      unique(target.repurp$target),
+                      FUN = function(i){
+                        mw.res <- wilcox.test(
+                          target.repurp[target == i]$AvgRank,
+                          target.repurp[target != i]$AvgRank,
+                          paired = FALSE,
+                          conf.int = T) # conf.int = T is required to get the estimate
+                        data.frame(
+                          target               = i,
+                          target.MW.p          = mw.res$p.value,
+                          target.pseudo.zscore = -1*(mw.res$estimate/target.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                        )
+                      }, mc.cores = detectCores()-2 ))
+                  ))
+                  target.repurp[, AvgRank_target := mean(AvgRank), by = target]
+                  target.repurp = unique(target.repurp[, c("target", "AvgRank_target", "target.pseudo.zscore",
+                                                           "N_compounds_target", "target.MW.p")])
+                  target.repurp$Rank_target <- rank(target.repurp$AvgRank_target)
+                  target.repurp <- target.repurp[order(Rank_target)]
+                  target.repurp$target.MW.FDR <- p.adjust(target.repurp$target.MW.p, method = "fdr")
+                  fwrite(target.repurp, paste0(this.output.dir, "/", thisgwas, "_",
                                                ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
-                                               "_indication_level.csv"))
+                                               "_target_level.csv"))
 
 
-              # Compile and save
-              # This is imperfect for compounds that have more than one moa
-              compound.level <- as.data.table(dplyr::left_join(
-                compound.level, moa.repurp[, c("moa", "Rank_moa", "MOA.pseudo.zscore",
-                                               "MOA.MW.p", "MOA.MW.FDR")]))
-              fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
-                                            ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
-                                            "_all_compound_level.csv"))
+                  #### disease_area ####
+                  # Aggregate at the level of disease_area
+                  disease_area.repurp      <- compound.level[, c("disease_area", "AvgRank")]
+                  # https://stackoverflow.com/questions/61684587/r-data-table-split-a-row-into-multiple-rows-based-on-string-values
+                  # Exclude those that don't have disease_area
+                  disease_area.repurp <- disease_area.repurp[!is.na(disease_area)]
+                  disease_area.repurp      = disease_area.repurp[disease_area != "unknown"]
+                  # disease_area.repurp <- disease_area.repurp[, .(disease_area = unlist(tstrsplit(disease_area, "\\|", type.convert = TRUE))), by = "AvgRank"]
+                  disease_area.repurp <- disease_area.repurp[, .(disease_area = {
+                    disease_areas <- unlist(tstrsplit(disease_area, "\\|", type.convert = TRUE))
+                    class(disease_areas) <- 'character' # to handle NULL and unable to deduct class issue
+                    disease_areas
+                  }), by = "AvgRank"] # to handle NULLs
+                  disease_area.repurp[, N_compounds_disease_area := length(AvgRank), by = disease_area]
+                  disease_area.repurp      = disease_area.repurp[N_compounds_disease_area > 1] # only if there are more than 2
+                  disease_area.avg.rank.sd = sd(disease_area.repurp$AvgRank)
 
-              # Filter to only Phase 3 and lauched
-              compound.level$Compound.MW.FDR <- as.numeric(NA)
-              compound.level[clinical_phase %in% c("Phase 3", "Launched")]$Compound.MW.FDR <-
-                p.adjust(compound.level[clinical_phase %in% c("Phase 3", "Launched")]$Compound.MW.p, method = "fdr")
-              # compound.level$Compound.MW.FDR <- p.adjust(compound.level$Compound.MW.p, method = "fdr")
-              compound.level <- compound.level[
-                , c("pert_iname", "clinical_phase", "Rank", "AvgRank", "Compound.MW.p",
-                    "Compound.MW.FDR", "Compound.pseudo.zscore", "moa", "Rank_moa",
-                    "MOA.pseudo.zscore", "MOA.MW.p", "MOA.MW.FDR", "target", "disease_area",
-                    "indication", "N_experiments", "perm.p.all")]
+                  message("Running disease area enrichment...")
+                  disease_area.repurp <- as.data.table(dplyr::left_join(
+                    disease_area.repurp,
+                    do.call(rbind,pbmclapply(
+                      unique(disease_area.repurp$disease_area),
+                      FUN = function(i){
+                        mw.res <- wilcox.test(
+                          disease_area.repurp[disease_area == i]$AvgRank,
+                          disease_area.repurp[disease_area != i]$AvgRank,
+                          paired = FALSE,
+                          conf.int = T) # conf.int = T is required to get the estimate
+                        data.frame(
+                          disease_area               = i,
+                          disease_area.MW.p          = mw.res$p.value,
+                          disease_area.pseudo.zscore = -1*(mw.res$estimate/disease_area.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                        )
+                      }, mc.cores = detectCores()-2 ))
+                  ))
+                  disease_area.repurp[, AvgRank_disease_area := mean(AvgRank), by = disease_area]
+                  disease_area.repurp = unique(disease_area.repurp[, c("disease_area", "AvgRank_disease_area", "disease_area.pseudo.zscore",
+                                                                       "N_compounds_disease_area", "disease_area.MW.p")])
+                  disease_area.repurp$Rank_disease_area <- rank(disease_area.repurp$AvgRank_disease_area)
+                  disease_area.repurp <- disease_area.repurp[order(Rank_disease_area)]
+                  disease_area.repurp$disease_area.MW.FDR <- p.adjust(disease_area.repurp$disease_area.MW.p, method = "fdr")
+                  fwrite(disease_area.repurp, paste0(this.output.dir, "/", thisgwas, "_",
+                                                     ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
+                                                     "_disease_area_level.csv"))
 
-              fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
-                                            ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
-                                            "_P3_and_launched_compound_level.csv"))
+                  #### indication ####
+                  # Aggregate at the level of indication
+                  indication.repurp      <- compound.level[, c("indication", "AvgRank")]
+                  # https://stackoverflow.com/questions/61684587/r-data-table-split-a-row-into-multiple-rows-based-on-string-values
+                  # Exclude those that don't have indication
+                  indication.repurp <- indication.repurp[!is.na(indication)]
+                  indication.repurp      = indication.repurp[indication != "unknown"]
+                  # indication.repurp <- indication.repurp[, .(indication = unlist(tstrsplit(indication, "\\|", type.convert = TRUE))), by = "AvgRank"]
+                  indication.repurp <- indication.repurp[, .(indication = {
+                    indications <- unlist(tstrsplit(indication, "\\|", type.convert = TRUE))
+                    class(indications) <- 'character' # to handle NULL and unable to deduct class issue
+                    indications
+                  }), by = "AvgRank"] # to handle NULLs
+                  indication.repurp[, N_compounds_indication := length(AvgRank), by = indication]
+                  indication.repurp      = indication.repurp[N_compounds_indication > 1] # only if there are more than 2
+                  indication.avg.rank.sd = sd(indication.repurp$AvgRank)
 
-              compound.level <- compound.level[clinical_phase=="Launched"] # 201 compounds
-              compound.level$Rank <- rank(compound.level$Rank) # rerank
-              column.order <- names(compound.level)
-              moa.ranks <- unique(compound.level[,c("moa", "Rank_moa")])
-              moa.ranks <- moa.ranks[!is.na(Rank_moa)]
-              moa.ranks$MOA.Rank <- rank(moa.ranks$Rank_moa) # rerank
-              moa.ranks[, Rank_moa := NULL]
-              compound.level[, Rank_moa := NULL] # remove
-              compound.level <- as.data.table(dplyr::left_join(compound.level, moa.ranks))
-              fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
-                                            ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
-                                            "_launched_compound_level.csv"))
-            } else {
+                  message("Running indication enrichment...")
+                  indication.repurp <- as.data.table(dplyr::left_join(
+                    indication.repurp,
+                    do.call(rbind,pbmclapply(
+                      unique(indication.repurp$indication),
+                      FUN = function(i){
+                        mw.res <- wilcox.test(
+                          indication.repurp[indication == i]$AvgRank,
+                          indication.repurp[indication != i]$AvgRank,
+                          paired = FALSE,
+                          conf.int = T) # conf.int = T is required to get the estimate
+                        data.frame(
+                          indication               = i,
+                          indication.MW.p          = mw.res$p.value,
+                          indication.pseudo.zscore = -1*(mw.res$estimate/indication.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                        )
+                      }, mc.cores = detectCores()-2 ))
+                  ))
+                  indication.repurp[, AvgRank_indication := mean(AvgRank), by = indication]
+                  indication.repurp = unique(indication.repurp[, c("indication", "AvgRank_indication", "indication.pseudo.zscore",
+                                                                   "N_compounds_indication", "indication.MW.p")])
+                  indication.repurp$Rank_indication <- rank(indication.repurp$AvgRank_indication)
+                  indication.repurp <- indication.repurp[order(Rank_indication)]
+                  indication.repurp$indication.MW.FDR <- p.adjust(indication.repurp$indication.MW.p, method = "fdr")
+                  fwrite(indication.repurp, paste0(this.output.dir, "/", thisgwas, "_",
+                                                   ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
+                                                   "_indication_level.csv"))
 
-              ### GTP SPECIFIC SCRIPTS ###
-              compound.level$Rank <- rank(compound.level$AvgRank) # replace Rank
-              compound.level$Compound.MW.FDR <- p.adjust(compound.level$Compound.MW.p, method = "fdr")
-              compound.level <- compound.level[order(Rank)][
-                , c("pert_iname", "Rank", "AvgRank", "Compound.MW.p",
-                    "Compound.pseudo.zscore", "Compound.MW.FDR",
-                    "N_experiments", "perm.p.all")]
-              fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
-                                            ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
-                                            "_compound_level.csv"))
-              }
+
+                  # Compile and save
+                  # This is imperfect for compounds that have more than one moa
+                  compound.level <- as.data.table(dplyr::left_join(
+                    compound.level, moa.repurp[, c("moa", "Rank_moa", "MOA.pseudo.zscore",
+                                                   "MOA.MW.p", "MOA.MW.FDR")]))
+                  fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
+                                                ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
+                                                "_all_compound_level.csv"))
+
+                  # Filter to only Phase 3 and lauched
+                  compound.level$Compound.MW.FDR <- as.numeric(NA)
+                  compound.level[clinical_phase %in% c("Phase 3", "Launched")]$Compound.MW.FDR <-
+                    p.adjust(compound.level[clinical_phase %in% c("Phase 3", "Launched")]$Compound.MW.p, method = "fdr")
+                  # compound.level$Compound.MW.FDR <- p.adjust(compound.level$Compound.MW.p, method = "fdr")
+                  compound.level <- compound.level[
+                    , c("pert_iname", "clinical_phase", "Rank", "AvgRank", "Compound.MW.p",
+                        "Compound.MW.FDR", "Compound.pseudo.zscore", "moa", "Rank_moa",
+                        "MOA.pseudo.zscore", "MOA.MW.p", "MOA.MW.FDR", "target", "disease_area",
+                        "indication", "N_experiments", "perm.p.all")]
+
+                  fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
+                                                ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
+                                                "_P3_and_launched_compound_level.csv"))
+
+                  compound.level <- compound.level[clinical_phase=="Launched"] # 201 compounds
+                  compound.level$Rank <- rank(compound.level$Rank) # rerank
+                  column.order <- names(compound.level)
+                  moa.ranks <- unique(compound.level[,c("moa", "Rank_moa")])
+                  moa.ranks <- moa.ranks[!is.na(Rank_moa)]
+                  moa.ranks$MOA.Rank <- rank(moa.ranks$Rank_moa) # rerank
+                  moa.ranks[, Rank_moa := NULL]
+                  compound.level[, Rank_moa := NULL] # remove
+                  compound.level <- as.data.table(dplyr::left_join(compound.level, moa.ranks))
+                  fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
+                                                ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
+                                                "_launched_compound_level.csv"))
+                } else {
+
+                  ### GTP SPECIFIC SCRIPTS ###
+                  compound.level$Rank <- rank(compound.level$AvgRank) # replace Rank
+                  compound.level$Compound.MW.FDR <- p.adjust(compound.level$Compound.MW.p, method = "fdr")
+                  compound.level <- compound.level[order(Rank)][
+                    , c("pert_iname", "Rank", "AvgRank", "Compound.MW.p",
+                        "Compound.pseudo.zscore", "Compound.MW.FDR",
+                        "N_experiments", "perm.p.all")]
+                  fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
+                                                ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
+                                                "_compound_level.csv"))
+                }
+              }) # Iterative model loop ends here.
 
           } # section of analysis specific scripts done.
+
+
+
 
         } # function for thisgwas loop ends here
       ) # lapply loop for CDR and GTP dataframes

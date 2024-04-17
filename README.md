@@ -18,7 +18,12 @@ Column      | description
 # Installation
 
 ## Local
-
+```
+MultiWAS::gv_install_packages(
+cran.packages = c("optparse"),
+bioc.packages = c("cmapR")
+)
+```
 ## Minerva (interactive), run the code line by line.
 ```
 ml pigz/2.3.1

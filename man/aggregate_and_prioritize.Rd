@@ -11,6 +11,7 @@ aggregate_and_prioritize(
   output.dir = "results/GTP_CDR/",
   ref.drug = TRT_CP.INFO.20200324,
   ref.cell = CELL.LINE.INFO,
+  iterative.tissue = TRUE,
   min.experiments.n = 2,
   n.cores = parallel::detectCores() - 2
 )
@@ -27,6 +28,8 @@ aggregate_and_prioritize(
 \item{ref.drug}{File with information for compounds (trt_cp) such as mechanism of action, indication etc. Look at data-raw if you want to generate a similar file}
 
 \item{ref.cell}{File with informaiton about the cell lines used in the perturbagen library.}
+
+\item{iterative.tissue}{when having more than one tissue/cell type aggregate for each tissue as well.}
 
 \item{min.experiments.n}{Min experiment per perturbagen (default is 2)}
 

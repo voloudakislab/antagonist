@@ -349,6 +349,7 @@ perform_antagonism <- function(
     sink( paste0(results.dir, "/", used.types$text.pattern[i],
                  "_", "all.signatures.AvgRank.readme") )
     print(paste0("Please note that the permutation test is run for each gwas-model combination"))
+    sink()
     # plyr::join_all(list(x,y,z), by='Flag', type='left')
 
   } # save for all data.types.

@@ -132,14 +132,19 @@ aggregate_and_prioritize = function(
 
             # Limit to models of interest and implement iterative approach
             if (!is.na(limit.models.to[1])) x <- x[model_ID %in% limit.models.to]
-            if (iterative.tissue) limit.models.to <- list(limit.models.to, unique(x$model_ID))
-            all.limit.models.to
+            if (iterative.tissue) { # this is a bit complicated to accomodate for merging a list with a vector
+              limit.models.to <- list(limit.models.to)
+              existing.models <- unique(x$model_ID)
+              for (z in seq(length(existing.models))) {
+                limit.models.to[z+1] <- existing.models[z]
+              } }
 
             # Now run all the model_IDs
             pbapply::pblapply(
               all.limit.models.to,
               FUN = function(limit.models.to) {
                 message(paste0("Now working on: ", paste(limit.models.to, collapse = ", ")))
+                if (!is.na(limit.models.to[1])) x <- x[model_ID %in% limit.models.to] # relimit to model under question
                 modelprefix <- as.character(MultiWAS::make_java_safe(paste(limit.models.to, collapse = "_X_")))
                 if (modelprefix == "NA") modelprefix <- "ALL"
                 this.output.dir <- paste0(

@@ -141,7 +141,7 @@ aggregate_and_prioritize = function(
 
             # Now run all the model_IDs
             pbapply::pblapply(
-              all.limit.models.to,
+              limit.models.to,
               FUN = function(limit.models.to) {
                 message(paste0("Now working on: ", paste(limit.models.to, collapse = ", ")))
                 if (!is.na(limit.models.to[1])) x <- x[model_ID %in% limit.models.to] # relimit to model under question

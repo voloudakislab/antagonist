@@ -136,8 +136,8 @@ aggregate_and_prioritize = function(
               limit.models.to <- list(limit.models.to)
               existing.models <- unique(x$model_ID)
               for (z in seq(length(existing.models))) {
-                limit.models.to[z+1] <- existing.models[z]
-              } }
+                limit.models.to[z+1] <- existing.models[z] }
+              limit.models.to <- unique(limit.models.to) }
 
             # Now run all the model_IDs
             pbapply::pblapply(

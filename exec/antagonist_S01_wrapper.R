@@ -3,6 +3,7 @@
 ######################
 # consider using an alias for shortcut.
 # submit as coordinator with max walltime
+# ~2GB per thread
 
 # STEP 1: run the 5-rank method and permutations
 #     Part A: run 5-rank method for each signature batch

@@ -11,7 +11,7 @@
 ######################
 # HARDCODED PARAMETERS
 ## Look here if the script fails
-R.lib.dir <- "/sc/arion/projects/roussp01a/sanan/Rlibs/230919_R_4.2.0_MultiWAS_Antagonist"
+R.lib.dir <- "/sc/arion/projects/va-biobank/software/Georgios_dev/240702_R_4.2.0_MultiWAS_Antagonist/"
 
 
 ###################################################
@@ -103,11 +103,17 @@ payload <- payload[order(abs(zscore), decreasing = T)]
 to.process <- as.data.table(tidyr::expand_grid(
   unique(payload[, c("gwas","model_ID") ]),
   sig_id)) #, "thres.N.Vector" = c(NA,thres.N.vector)))
+#print(paste0('the old to.proceess has dimension: ', dim(to.process)))
+
+### prototyping:
+#to.process <- to.process[, .SD[sample(.N, min(20, .N))], by = .(gwas, model_ID)]
+#to.process1 <- as.data.frame(to.process1)
+#print(paste0('the new to.proceess has dimension: ', dim(to.process)))
 
 # Run loop for each signature in the file
 signature <- pbmclapply(
   seq(nrow(to.process)),
-  # seq(5),
+  #seq(5),
   FUN = function(j){
 
     # limit the payload

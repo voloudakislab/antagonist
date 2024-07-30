@@ -187,7 +187,9 @@ aggregate_and_prioritize = function(
                         data.frame(
                           pert_iname             = i,
                           Compound.MW.p          = mw.res$p.value,
-                          Compound.pseudo.zscore = -1*(mw.res$estimate/avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                          Compound.pseudo.zscore = -1*(mw.res$estimate/avg.rank.sd), # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                          Compound.HL.estimate   = mw.res$estimate,
+                          Compound.avg.rank.sd   = avg.rank.sd
                         )
                       }, mc.cores = n.cores ))
                 ))
@@ -207,13 +209,15 @@ aggregate_and_prioritize = function(
                   compound.level = unique(x[, c(
                     "gwas",
                     "pert_iname", "Rank", "AvgRank", "Compound.MW.p", "Compound.pseudo.zscore",
+                    "Compound.HL.estimate", "Compound.avg.rank.sd",
                     "clinical_phase",   "moa", "target", "disease_area", "indication",
                     "N_experiments", "perm.p.all")])
                 } else {
                   compound.level = unique(x[, c(
                     "gwas",
                     "pert_iname", "Rank", "AvgRank", "Compound.MW.p",
-                    "Compound.pseudo.zscore",  "N_experiments", "perm.p.all")])
+                    "Compound.pseudo.zscore", "Compound.HL.estimate", "Compound.avg.rank.sd",
+                    "N_experiments", "perm.p.all")])
                   ## GTP specific code
                 }
 
@@ -260,13 +264,17 @@ aggregate_and_prioritize = function(
                         data.frame(
                           moa               = i,
                           MOA.MW.p          = mw.res$p.value,
-                          MOA.pseudo.zscore = -1*(mw.res$estimate/moa.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                          MOA.pseudo.zscore = -1*(mw.res$estimate/moa.avg.rank.sd), # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                          MOA.HL.estimate   = mw.res$estimate,
+                          MOA.avg.rank.sd   = avg.rank.sd
                         )
                       }, mc.cores = detectCores()-2 ))
                   ))
                   moa.repurp[, AvgRank_moa := mean(AvgRank), by = moa]
-                  moa.repurp = unique(moa.repurp[, c("moa", "AvgRank_moa", "MOA.pseudo.zscore",
-                                                     "N_compounds_moa", "MOA.MW.p")])
+                  moa.repurp = unique(moa.repurp[
+                    , c("moa", "AvgRank_moa", "MOA.pseudo.zscore",
+                        "MOA.HL.estimate", "MOA.avg.rank.sd",
+                        "N_compounds_moa", "MOA.MW.p")])
                   moa.repurp$Rank_moa <- rank(moa.repurp$AvgRank_moa)
                   # moa.repurp$Rank_moa_percentile <- my_percent(moa.repurp$Rank_moa_percentile/length(unique(moa.repurp$moa)))
                   # moa.repurp$Rank_moa_percentile <- moa.repurp$Rank_moa_percentile/length(unique(moa.repurp$moa))
@@ -311,13 +319,17 @@ aggregate_and_prioritize = function(
                         data.frame(
                           target               = i,
                           target.MW.p          = mw.res$p.value,
-                          target.pseudo.zscore = -1*(mw.res$estimate/target.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                          target.pseudo.zscore = -1*(mw.res$estimate/target.avg.rank.sd), # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                          target.HL.estimate   = mw.res$estimate,
+                          target.avg.rank.sd   = avg.rank.sd
                         )
                       }, mc.cores = detectCores()-2 ))
                   ))
                   target.repurp[, AvgRank_target := mean(AvgRank), by = target]
-                  target.repurp = unique(target.repurp[, c("target", "AvgRank_target", "target.pseudo.zscore",
-                                                           "N_compounds_target", "target.MW.p")])
+                  target.repurp = unique(target.repurp[
+                    , c("target", "AvgRank_target", "target.pseudo.zscore",
+                        "target.HL.estimate", "target.avg.rank.sd",
+                        "N_compounds_target", "target.MW.p")])
                   target.repurp$Rank_target <- rank(target.repurp$AvgRank_target)
                   target.repurp <- target.repurp[order(Rank_target)]
                   target.repurp$target.MW.FDR <- p.adjust(target.repurp$target.MW.p, method = "fdr")
@@ -363,13 +375,17 @@ aggregate_and_prioritize = function(
                         data.frame(
                           disease_area               = i,
                           disease_area.MW.p          = mw.res$p.value,
-                          disease_area.pseudo.zscore = -1*(mw.res$estimate/disease_area.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                          disease_area.pseudo.zscore = -1*(mw.res$estimate/disease_area.avg.rank.sd), # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                          disease_area.HL.estimate   = mw.res$estimate,
+                          disease_area.avg.rank.sd   = avg.rank.sd
                         )
                       }, mc.cores = detectCores()-2 ))
                   ))
                   disease_area.repurp[, AvgRank_disease_area := mean(AvgRank), by = disease_area]
-                  disease_area.repurp = unique(disease_area.repurp[, c("disease_area", "AvgRank_disease_area", "disease_area.pseudo.zscore",
-                                                                       "N_compounds_disease_area", "disease_area.MW.p")])
+                  disease_area.repurp = unique(disease_area.repurp[
+                    , c("disease_area", "AvgRank_disease_area", "disease_area.pseudo.zscore",
+                        "disease_area.HL.estimate", "disease_area.avg.rank.sd",
+                        "N_compounds_disease_area", "disease_area.MW.p")])
                   disease_area.repurp$Rank_disease_area <- rank(disease_area.repurp$AvgRank_disease_area)
                   disease_area.repurp <- disease_area.repurp[order(Rank_disease_area)]
                   disease_area.repurp$disease_area.MW.FDR <- p.adjust(disease_area.repurp$disease_area.MW.p, method = "fdr")
@@ -407,13 +423,17 @@ aggregate_and_prioritize = function(
                         data.frame(
                           indication               = i,
                           indication.MW.p          = mw.res$p.value,
-                          indication.pseudo.zscore = -1*(mw.res$estimate/indication.avg.rank.sd) # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                          indication.pseudo.zscore = -1*(mw.res$estimate/indication.avg.rank.sd), # the estimate is a deviation from the median/mean AvgRank and we are dividing that by the sd of AvgRank
+                          indication.HL.estimate   = mw.res$estimate,
+                          indication.avg.rank.sd   = avg.rank.sd
                         )
                       }, mc.cores = detectCores()-2 ))
                   ))
                   indication.repurp[, AvgRank_indication := mean(AvgRank), by = indication]
-                  indication.repurp = unique(indication.repurp[, c("indication", "AvgRank_indication", "indication.pseudo.zscore",
-                                                                   "N_compounds_indication", "indication.MW.p")])
+                  indication.repurp = unique(indication.repurp[
+                    , c("indication", "AvgRank_indication", "indication.pseudo.zscore",
+                        "indication.HL.estimate", "indication.avg.rank.sd",
+                        "N_compounds_indication", "indication.MW.p")])
                   indication.repurp$Rank_indication <- rank(indication.repurp$AvgRank_indication)
                   indication.repurp <- indication.repurp[order(Rank_indication)]
                   indication.repurp$indication.MW.FDR <- p.adjust(indication.repurp$indication.MW.p, method = "fdr")
@@ -425,8 +445,10 @@ aggregate_and_prioritize = function(
                   # Compile and save
                   # This is imperfect for compounds that have more than one moa
                   compound.level <- as.data.table(dplyr::left_join(
-                    compound.level, moa.repurp[, c("moa", "Rank_moa", "MOA.pseudo.zscore",
-                                                   "MOA.MW.p", "MOA.MW.FDR")]))
+                    compound.level, moa.repurp[, c(
+                      "moa", "Rank_moa", "MOA.pseudo.zscore",
+                      "MOA.HL.estimate", "MOA.avg.rank.sd",
+                      "MOA.MW.p", "MOA.MW.FDR")]))
                   fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
                                                 ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),
                                                 "_all_compound_level.csv"))
@@ -438,8 +460,11 @@ aggregate_and_prioritize = function(
                   # compound.level$Compound.MW.FDR <- p.adjust(compound.level$Compound.MW.p, method = "fdr")
                   compound.level <- compound.level[
                     , c("pert_iname", "clinical_phase", "Rank", "AvgRank", "Compound.MW.p",
-                        "Compound.MW.FDR", "Compound.pseudo.zscore", "moa", "Rank_moa",
-                        "MOA.pseudo.zscore", "MOA.MW.p", "MOA.MW.FDR", "target", "disease_area",
+                        "Compound.MW.FDR", "Compound.pseudo.zscore",
+                        "Compound.HL.estimate", "Compound.avg.rank.sd",
+                        "moa", "Rank_moa", "MOA.pseudo.zscore",
+                        "MOA.HL.estimate", "MOA.avg.rank.sd",
+                        "MOA.MW.p", "MOA.MW.FDR", "target", "disease_area",
                         "indication", "N_experiments", "perm.p.all")]
 
                   fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
@@ -465,7 +490,9 @@ aggregate_and_prioritize = function(
                   compound.level$Compound.MW.FDR <- p.adjust(compound.level$Compound.MW.p, method = "fdr")
                   compound.level <- compound.level[order(Rank)][
                     , c("pert_iname", "Rank", "AvgRank", "Compound.MW.p",
-                        "Compound.pseudo.zscore", "Compound.MW.FDR",
+                        "Compound.pseudo.zscore",
+                        "Compound.HL.estimate", "Compound.avg.rank.sd",
+                        "Compound.MW.FDR",
                         "N_experiments", "perm.p.all")]
                   fwrite(compound.level, paste0(this.output.dir, "/", thisgwas, "_",
                                                 ifelse(unique(x$pert_type)[1] == "trt_cp", "cdr","gtp"),

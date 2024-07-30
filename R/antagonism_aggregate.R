@@ -21,19 +21,21 @@
 #'
 
 aggregate_and_prioritize = function(
-    dfs.to.process                  = "results/GTP_CDR/.+_.+_all\\.signatures\\.AvgRank\\.csv\\.gz$",
-    limit.dfs.to                    = "trt_cp|trt_sh|trt_oe|trt_xpr",
-    limit.models.to                 = NA,
-    output.dir                      = "results/GTP_CDR/",
-    # For CDR
-    ref.drug                        = TRT_CP.INFO.20200324,
-    # Cell experiments
-    ref.cell                        = CELL.LINE.INFO,
-    # Iterative
-    iterative.tissue                = TRUE,
-    # parameters
-    min.experiments.n               = 2,
-    n.cores                         = parallel::detectCores()-2
+  dfs.to.process                  = "results/GTP_CDR/.+_.+_all\\.signatures\\.AvgRank\\.csv\\.gz$",
+  #dfs.to.process                  = '/sc/arion/projects/va-biobank/software/Georgios_dev/results/GTP_CDR_prototyping_2RDS_5com_Jamie_SCZ_070924/trt_cp_all.signatures.AvgRank.csv.gz',
+  limit.dfs.to                    = "trt_cp|trt_sh|trt_oe|trt_xpr",
+  limit.models.to                 = NA,
+  output.dir                      = "results/GTP_CDR/",
+  #output.dir                      = "/sc/arion/projects/va-biobank/software/Georgios_dev/results/GTP_CDR_prototyping_2RDS_5com_Jamie_SCZ_070924",
+  # For CDR
+  ref.drug                        = TRT_CP.INFO.20200324,
+  # Cell experiments
+  ref.cell                        = CELL.LINE.INFO,
+  # Iterative
+  iterative.tissue                = TRUE,
+  # parameters
+  min.experiments.n               = 2,
+  n.cores                         = parallel::detectCores()-2
 ) {
 
   # FIXME: make sure that this runs for each GWAS separately.
@@ -230,11 +232,15 @@ aggregate_and_prioritize = function(
                   moa.repurp      = moa.repurp[moa != "unknown"]
                   # Break multiple moas
                   # moa.repurp <- moa.repurp[, .(moa = unlist(tstrsplit(moa, "\\|", type.convert = TRUE))), by = "AvgRank"] doesn't handle NULL well
-                  moa.repurp <- moa.repurp[, .(moa = {
-                    allmoa <- unlist(tstrsplit(moa, "\\|", type.convert = TRUE))
-                    class(allmoa) <- 'character' # to handle NULL and unable to deduct class issue
-                    allmoa
-                  }), by = "AvgRank"] # to handle NULLs
+                  #moa.repurp <- moa.repurp[, .(moa = {
+                  #  allmoa <- unlist(tstrsplit(moa, "\\|", type.convert = TRUE))
+                  #  class(allmoa) <- 'character' # to handle NULL and unable to deduct class issue
+                  #  allmoa
+                  #}), by = "AvgRank"] # to handle NULLs
+                  moa.repurp <- moa.repurp[, .(
+                    moa = unlist(strsplit(moa, "\\|")),
+                    AvgRank = rep(AvgRank, sapply(strsplit(moa, "\\|"), length))
+                  )]
                   moa.repurp[, N_compounds_moa := length(AvgRank), by = moa]
                   moa.repurp      = moa.repurp[N_compounds_moa > 1] # only if there are more than 2
                   moa.avg.rank.sd = sd(moa.repurp$AvgRank)
@@ -278,11 +284,15 @@ aggregate_and_prioritize = function(
                   target.repurp <- target.repurp[!is.na(target)]
                   target.repurp      = target.repurp[target != "unknown"]
                   # target.repurp <- target.repurp[, .(target = unlist(tstrsplit(target, "\\|", type.convert = TRUE))), by = "AvgRank"]
-                  target.repurp <- target.repurp[, .(target = {
-                    alltargets <- unlist(tstrsplit(target, "\\|", type.convert = TRUE))
-                    class(alltargets) <- 'character' # to handle NULL and unable to deduct class issue
-                    alltargets
-                  }), by = "AvgRank"] # to handle NULLs
+                  #target.repurp <- target.repurp[, .(target = {
+                  #  alltargets <- unlist(tstrsplit(target, "\\|", type.convert = TRUE))
+                  #  class(alltargets) <- 'character' # to handle NULL and unable to deduct class issue
+                  #  alltargets
+                  #}), by = "AvgRank"] # to handle NULLs
+                  target.repurp <- target.repurp[, .(
+                    target = unlist(strsplit(target, "\\|")),
+                    AvgRank = rep(AvgRank, sapply(strsplit(target, "\\|"), length))
+                  )]
                   target.repurp[, N_compounds_target := length(AvgRank), by = target]
                   target.repurp      = target.repurp[N_compounds_target > 1] # only if there are more than 2
                   target.avg.rank.sd = sd(target.repurp$AvgRank)
@@ -324,11 +334,17 @@ aggregate_and_prioritize = function(
                   disease_area.repurp <- disease_area.repurp[!is.na(disease_area)]
                   disease_area.repurp      = disease_area.repurp[disease_area != "unknown"]
                   # disease_area.repurp <- disease_area.repurp[, .(disease_area = unlist(tstrsplit(disease_area, "\\|", type.convert = TRUE))), by = "AvgRank"]
-                  disease_area.repurp <- disease_area.repurp[, .(disease_area = {
-                    disease_areas <- unlist(tstrsplit(disease_area, "\\|", type.convert = TRUE))
-                    class(disease_areas) <- 'character' # to handle NULL and unable to deduct class issue
-                    disease_areas
-                  }), by = "AvgRank"] # to handle NULLs
+                  #disease_area.repurp <- disease_area.repurp[, .(disease_area = {
+                  #  disease_areas <- unlist(tstrsplit(disease_area, "\\|", type.convert = TRUE))
+                  #  class(disease_areas) <- 'character' # to handle NULL and unable to deduct class issue
+                  #  disease_areas
+                  #}), by = "AvgRank"] # to handle NULLs
+                  ### Zhenyi fixed:
+                  disease_area.repurp <- disease_area.repurp[, .(
+                    disease_area = unlist(strsplit(disease_area, "\\|")),
+                    AvgRank = rep(AvgRank, sapply(strsplit(disease_area, "\\|"), length))
+                  )]
+
                   disease_area.repurp[, N_compounds_disease_area := length(AvgRank), by = disease_area]
                   disease_area.repurp      = disease_area.repurp[N_compounds_disease_area > 1] # only if there are more than 2
                   disease_area.avg.rank.sd = sd(disease_area.repurp$AvgRank)
@@ -369,11 +385,10 @@ aggregate_and_prioritize = function(
                   indication.repurp <- indication.repurp[!is.na(indication)]
                   indication.repurp      = indication.repurp[indication != "unknown"]
                   # indication.repurp <- indication.repurp[, .(indication = unlist(tstrsplit(indication, "\\|", type.convert = TRUE))), by = "AvgRank"]
-                  indication.repurp <- indication.repurp[, .(indication = {
-                    indications <- unlist(tstrsplit(indication, "\\|", type.convert = TRUE))
-                    class(indications) <- 'character' # to handle NULL and unable to deduct class issue
-                    indications
-                  }), by = "AvgRank"] # to handle NULLs
+                  indication.repurp <- indication.repurp[, .(
+                    indication = unlist(strsplit(indication, "\\|")),
+                    AvgRank = rep(AvgRank, sapply(strsplit(indication, "\\|"), length))
+                  )] # to handle NULLs
                   indication.repurp[, N_compounds_indication := length(AvgRank), by = indication]
                   indication.repurp      = indication.repurp[N_compounds_indication > 1] # only if there are more than 2
                   indication.avg.rank.sd = sd(indication.repurp$AvgRank)

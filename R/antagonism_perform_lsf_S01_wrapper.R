@@ -61,7 +61,7 @@ perform_antagonism_lsf_S01_wrapper <- function(
   results.dir            = "results/GTP_CDR/",
   # Parameters
   n.threads              = parallel::detectCores()-2,
-  signature.dir          = "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/eachDrug/", # /scratch/cmap_l1000_2021_01_28/
+  signature.dir          = "/sc/arion/projects/va-biobank/software/Georgios_dev/forJamie/antagonist_files/drugs", # /scratch/cmap_l1000_2021_01_28/
   gene.anno.file         = "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/geneinfo_beta.txt",
   grep.sig.pattern       = "trt_cp|trt_sh|trt_oe|trt_xpr",
   noperm                 = 100, #
@@ -77,7 +77,7 @@ perform_antagonism_lsf_S01_wrapper <- function(
   # HARDCODED PARAMETERS
   ## Look here if the script fails
   setwd(working.directory)
-  R.lib.dir <- "/sc/arion/projects/roussp01a/sanan/Rlibs/230919_R_4.2.0_MultiWAS_Antagonist"
+  R.lib.dir <- "/sc/arion/projects/va-biobank/software/Georgios_dev/240702_R_4.2.0_MultiWAS_Antagonist/"
   types.of.data <- data.table(
     text.pattern = c("trt_cp", 	"trt_sh", "trt_oe", "trt_xpr", "trt_misc", "ctl"),
     data.name    = c("compounds", "shRNA", "over.expression", "CRISPR",
@@ -130,6 +130,7 @@ perform_antagonism_lsf_S01_wrapper <- function(
     FUN = function(x) {colnames(readRDS(x))},
     mc.cores = n.threads
   )
+  message('First signature.inventory works')
   signature.inventory <- do.call(rbind, lapply(
     unique(unlist(names(signature.inventory))),
     FUN = function(x) {
@@ -166,6 +167,7 @@ perform_antagonism_lsf_S01_wrapper <- function(
         # add ml R
         job.name   <- paste0(sub("\\.RDS$", "", basename(i)))
         ## Populate the files.info with this new information
+        ### always remove the old outputs and generate new ones for rbinding the signatures.
         # Usually takes 30' for about 50 gwas - model combinations
         b.sub <- paste0('bsub -P acc_va-biobank -q premium -n ', n.threads,
                         ' -W 2:00 -J ', job.name, ' -R span[hosts=1] -R rusage[mem=3000] -oo '
@@ -179,28 +181,34 @@ perform_antagonism_lsf_S01_wrapper <- function(
           "Rscript --verbose  ", R.lib.dir, "/antagonist/exec/antagonist_S01PA_core.R", " ",
           "--recipe ", recipe.file, " ",
           "--cmapfile ", i
-        )
+          )
         writeLines(
           paste0(
             "#!/bin/bash", "\n",
             thiscommand),
           paste0(results.dir, "/intermediate.files/scripts/S01A/",
                  job.name, ".sh")
-        )
+          )
         submission.command <- paste0(
           b.sub, results.dir, "/intermediate.files/scripts/S01A/", job.name, ".sh")
 
         if (!dryrun) { # if dry run then don't execute the scripts
           system(submission.command)
-        } else {
-          writeLines(
-            submission.command,
-            paste0(results.dir, "/intermediate.files/scripts/S01A/",
-                   job.name, ".dryrun.txt") )
-          }
-        #sink()
-      } # signature loop ends
-    )
+          } else {
+            writeLines(
+              submission.command,
+              paste0(results.dir, "/intermediate.files/scripts/S01A/",
+                     job.name, ".dryrun.txt") )
+            }
+        #while (!file.exists(signature.file)) {
+        #  Sys.sleep(10)  # Check every 10 seconds
+        #}
+        #message(paste0('Signature file for job', job.name, ' is finished'))
+        #signature <- fread(signature.file)
+        #return(signature)
+      #sink()
+        } # signature loop ends
+      ) # pblapply ends
   } # this only runs if the output doesn't exist
 
   ##############################################################################
@@ -230,9 +238,24 @@ perform_antagonism_lsf_S01_wrapper <- function(
   message("Collecting the individual signature files")
 
   # list.dirs(paste0(results.dir, "/intermediate.files/5rank/S01A/"))
+  message('All jobs finished and writing all signatures to all.signatures.csv.gz file')
+  signatures <- list.files(path = paste0(results.dir, "intermediate.files/5rank/S01A/"), pattern = "\\.csv\\.gz$", full.names = TRUE)
+  all.signatures <- do.call(
+    rbind,
+    pbapply::pblapply(
+      # pbmcapply::pbmclapply(
+      stats::setNames(signatures, basename(signatures)),
+      FUN = function(i) {
+        fread(i)
+      }
+    )
+  )
+  fwrite( all.signatures, paste0(paste0(results.dir, "intermediate.files/all.signatures.csv.gz")) )
+  #rm(all.signatures)
+  gc()
 
 
-#
+
 #   ##############################################################################
 #   # Now collecting across all the results
 #
@@ -240,106 +263,105 @@ perform_antagonism_lsf_S01_wrapper <- function(
 #   # Script for averaging the ranking
 #
 #
-#   used.types <- unlist(strsplit(grep.sig.pattern, "\\|"))
-#   used.types <- types.of.data[text.pattern %in% used.types]
+  used.types <- unlist(strsplit(grep.sig.pattern, "\\|"))[[1]]  ### only run for trt_cp
+  used.types <- types.of.data[text.pattern %in% used.types]
 #
 #
 #
 # #### !!!!!!!!!!!!!!!!!!!!!!!!!! split by GWAS and model?
 #
 #
-#   for (i in seq(nrow(used.types))) {
-#     # writing code to be able to be run both for groups and individual data.sets in the future.
-#     message("Loading the master signature file...")
-#     thesesignatures <- fread(paste0(paste0(results.dir, "intermediate.files/all.signatures.csv.gz")))
-#     message(paste0("Now working on ", used.types$data.name[i], " (", used.types$text.pattern[i],  ")"))
-#     thesesignatures <- thesesignatures[sig_id %in% unique(signature.inventory[Signature.type %in% used.types$text.pattern[i]]$sig_id) ]
-#     fixed.columns   <- c("gwas", "model_ID", "sig_id")
+  for (i in seq(nrow(used.types))) {
+     # writing code to be able to be run both for groups and individual data.sets in the future.
+    message("Loading the master signature file...")
+    thesesignatures <- all.signatures
+    #thesesignatures <- fread(paste0(paste0(results.dir, "intermediate.files/all.signatures.csv.gz")))
+    message(paste0("Now working on ", used.types$data.name[i], " (", used.types$text.pattern[i],  ")"))
+    thesesignatures <- thesesignatures[sig_id %in% unique(signature.inventory[Signature.type %in% used.types$text.pattern[i]]$sig_id) ]
+    fixed.columns   <- c("gwas", "model_ID", "sig_id")
 #
 #     ### rank extractor ###
-#     rank_extractor <- function(
-#     prefix,  # "" for actual otherwise it is the permutation of interest
-#     z  # the signature dataset as above (e.g. thesesignatures) but preferrably split by unique gwas model_ID combinations.
-#     ) {
-#       ranks.actual <- data.table(
-#         "gwas"                      = z$gwas,
-#         "model_ID"                  = z$model_ID,
-#         "sig_id"                    = z$sig_ID,
-#         "rank.est.pearson"          = rank(z[[paste0(prefix, "ALL.cor.pearson")]]),
-#         "rank.est.spearman"         = rank(z[[paste0(prefix, "ALL.cor.spearman")]]) )
+    rank_extractor <- function(
+    prefix,  # "" for actual otherwise it is the permutation of interest
+    z # the signature dataset as above (e.g. thesesignatures) but preferrably split by unique gwas model_ID combinations.
+    ) {
+      ranks.actual <- data.table(
+        "gwas"                      = z$gwas,
+        "model_ID"                  = z$model_ID,
+        "sig_id"                    = z$sig_ID,
+        "rank.est.pearson"          = rank(z[[paste0(prefix, "ALL.cor.pearson")]]),
+        "rank.est.spearman"         = rank(z[[paste0(prefix, "ALL.cor.spearman")]]) )
 #       # ks
-#       cols <- names(z)[grep(paste0(ifelse(prefix == "", "^", prefix), "[[:digit:]]+\\.ks.signed"), names(z))]
-#       ranks.actual$mean.rank.ks <- rowMeans(z[,..cols][ , (cols) := lapply(.SD, rank), .SDcols = cols])
+      cols <- names(z)[grep(paste0(ifelse(prefix == "", "^", prefix), "[[:digit:]]+\\.ks.signed"), names(z))]
+      ranks.actual$mean.rank.ks <- rowMeans(z[,..cols][ , (cols) := lapply(.SD, rank), .SDcols = cols])
 #       # Extreme pearson
-#       cols <- names(z)[grep(paste0(ifelse(prefix == "", "^", prefix), "[[:digit:]]+\\.cor.pearson"), names(z))]
-#       ranks.actual$mean.rank.extreme.pearson <- rowMeans(z[,..cols][ , (cols) := lapply(.SD, rank), .SDcols = cols])
+      cols <- names(z)[grep(paste0(ifelse(prefix == "", "^", prefix), "[[:digit:]]+\\.cor.pearson"), names(z))]
+      ranks.actual$mean.rank.extreme.pearson <- rowMeans(z[,..cols][ , (cols) := lapply(.SD, rank), .SDcols = cols])
 #       # Extreme spearman
-#       cols <- names(z)[grep(paste0(ifelse(prefix == "", "^", prefix), "[[:digit:]]+\\.cor.spearman"), names(z))]
-#       ranks.actual$mean.rank.extreme.spearman <- rowMeans(z[,..cols][ , (cols) := lapply(.SD, rank), .SDcols = cols])
+      cols <- names(z)[grep(paste0(ifelse(prefix == "", "^", prefix), "[[:digit:]]+\\.cor.spearman"), names(z))]
+      ranks.actual$mean.rank.extreme.spearman <- rowMeans(z[,..cols][ , (cols) := lapply(.SD, rank), .SDcols = cols])
 #       # Avg rank
-#       cols <- c("rank.est.pearson", "rank.est.spearman", "mean.rank.ks", "mean.rank.extreme.pearson", "mean.rank.extreme.spearman")
-#       # ranks.actual[[paste0(prefix, "AvgRank")]] <- rowMeans(ranks.actual[,..cols][ , (cols) := lapply(.SD, rank), .SDcols = cols])
-#       return(rowMeans(ranks.actual[,..cols][ , (cols) := lapply(.SD, rank), .SDcols = cols]))
-#     }
-#
-#
-#     gwas.model.combos <- unique(df[, c("gwas","model_ID") ])
-#     output <- do.call(
-#       rbind,
-#       pbmcapply::pbmclapply(
-#         seq(nrow(gwas.model.combos)),
-#         FUN = function (j) {
-#
-#           thisz <- thesesignatures[gwas == gwas.model.combos$gwas[j] & model_ID == gwas.model.combos$model_ID[j]]
+      cols <- c("rank.est.pearson", "rank.est.spearman", "mean.rank.ks", "mean.rank.extreme.pearson", "mean.rank.extreme.spearman")
+      ranks.actual[[paste0(prefix, "AvgRank")]] <- rowMeans(ranks.actual[,..cols][ , (cols) := lapply(.SD, rank), .SDcols = cols])
+      return(rowMeans(ranks.actual[,..cols][ , (cols) := lapply(.SD, rank), .SDcols = cols]))
+      }
+
+    gwas.model.combos <- unique(df[, c("gwas","model_ID") ])
+    output <- do.call(
+      rbind,
+      pbmcapply::pbmclapply(
+        seq(nrow(gwas.model.combos)),
+        FUN = function (j) {
+          thisz <- thesesignatures[gwas == gwas.model.combos$gwas[j] & model_ID == gwas.model.combos$model_ID[j]]
 #
 #           ### Getting Avg Rank
-#           message("Summarizing the five rank method...")
-#           five.rank.all <- do.call(
-#             cbind,
-#             lapply(
-#             stats::setNames(
-#               unlist(c("", paste0("Perm_", seq(noperm), "_"))),
-#               unlist(c("Actual", paste0("Perm_", seq(noperm))))),
-#             rank_extractor,
-#             z = thisz ) )
+          message("Summarizing the five rank method...")
+          five.rank.all <- do.call(
+            cbind,
+            lapply(
+              stats::setNames(
+                unlist(c("", paste0("Perm_", seq(noperm), "_"))),
+                unlist(c("Actual", paste0("Perm_", seq(noperm))))),
+              rank_extractor,
+              z = thisz ) )
 #
 #           ### Getting permutation p value
-#           message("Getting permutation p values...")
-#           perm.p <- unlist(lapply(
-#             seq(nrow(five.rank.all)),
-#             FUN = function(i) {
-#               sum(
-#                 as.numeric(five.rank.all[i,2:ncol(five.rank.all)]) <=
-#                   as.numeric(five.rank.all[i,1]) ) /
-#                 (ncol(five.rank.all)-1)
-#             } ))
+          message("Getting permutation p values...")
+          perm.p <- unlist(lapply(
+            seq(nrow(five.rank.all)),
+            FUN = function(i) {
+              sum(
+                as.numeric(five.rank.all[i,2:ncol(five.rank.all)]) <=
+                  as.numeric(five.rank.all[i,1]) ) /
+                (ncol(five.rank.all)-1)
+              } ))
 #
 #           ### Compiling the per gwas, model_ID and sig_od results.
-#           final.rank <- data.table(
-#             "gwas"         = gwas.model.combos$gwas[j],
-#             "model_ID"     = gwas.model.combos$model_ID[j],
-#             "sig_id"       = thisz$sig_id,
-#             "AvgRank"      = as.numeric(five.rank.all[,1]),
-#             "perm.p"       = perm.p
-#           )
-#           return(final.rank)
-#         }, mc.cores = n.threads# more conservative.
-#       ) # pbmclapply gwas.model.combos end
-#     ) # do.call end.
+          final.rank <- data.table(
+            "gwas"         = gwas.model.combos$gwas[j],
+            "model_ID"     = gwas.model.combos$model_ID[j],
+            "sig_id"       = thisz$sig_id,
+            "AvgRank"      = as.numeric(five.rank.all[,1]),
+            "perm.p"       = perm.p
+            )
+          return(final.rank)
+          }, mc.cores = n.threads# more conservative.
+) # pbmclapply gwas.model.combos end
+) # do.call end.
 #
 #     # Annotate
-#     sig.annotation <- MultiWAS::return_df(sig.annotation)
-#     output <- as.data.table(dplyr::left_join(output, sig.annotation))
+    sig.annotation <- MultiWAS::return_df(sig.annotation)
+    output <- as.data.table(dplyr::left_join(output, sig.annotation))
 #
 #     # Save
-#     fwrite(
-#       output,
-#       paste0(results.dir, "/", used.types$text.pattern[i],
-#       "_", "all.signatures.AvgRank.csv.gz"))
-#     sink( paste0(results.dir, "/", used.types$text.pattern[i],
-#                  "_", "all.signatures.AvgRank.readme") )
-#     print(paste0("Please note that the permutation test is run for each gwas-model combination"))
+    fwrite(
+      output,
+      paste0(results.dir, "/", used.types$text.pattern[i],
+             "_", "all.signatures.AvgRank.csv.gz"))
+    sink( paste0(results.dir, "/", used.types$text.pattern[i],
+                 "_", "all.signatures.AvgRank.readme") )
+    print(paste0("Please note that the permutation test is run for each gwas-model combination"))
 #
-#   } # save for all data.types.
+    } # save for all data.types.
 
 } # function ends

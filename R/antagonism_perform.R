@@ -11,7 +11,7 @@
 #' This is a multithreaded data.table based re-write of So HC et al. Analysis of
 #'  genome-wide association data highlights candidates for drug repositioning in
 #'  psychiatry. Nat Neurosci. 2017 Oct;20(10):1342-1349. PMID: 28805813.
-#' Analysis is run for each GWAS (trait) - model_ID (imputation model or specific analysis) pair
+#' Analysis is run for each "gwas" (trait) - "model_ID" (imputation model or specific analysis) pair
 #' It has been adapted to run for signatures (individual parameters) vs.
 #' summarized compound scores.
 #'
@@ -276,7 +276,7 @@ perform_antagonism <- function(
         "sig_id"                    = z$sig_ID,
         "rank.est.pearson"          = rank(z[[paste0(prefix, "ALL.cor.pearson")]]),
         "rank.est.spearman"         = rank(z[[paste0(prefix, "ALL.cor.spearman")]]) )
-      # ks
+      # ks (extreme)
       cols <- names(z)[grep(paste0(ifelse(prefix == "", "^", prefix), "[[:digit:]]+\\.ks.signed"), names(z))]
       ranks.actual$mean.rank.ks <- rowMeans(z[,..cols][ , (cols) := lapply(.SD, rank), .SDcols = cols])
       # Extreme pearson

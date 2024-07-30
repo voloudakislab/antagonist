@@ -12,10 +12,13 @@
 #'  psychiatry. Nat Neurosci. 2017 Oct;20(10):1342-1349. PMID: 28805813.
 #' It has been adapted to run for signatures (individual parameters) vs.
 #' summarized compound scores.
+#' Of note that in their paper, it is a bit ambiguous what is done, that's why
+#' the code was migrated ("Permutation_test_compare_expression_corrected.R")
+#'
 #'
 #' @param thres.N threshold NA is all values otherwise consider top values
 #' @param x payload of interest
-#' @param scramble scramble the z-scores (used for permutation analusis)
+#' @param scramble scramble the z-scores (used for permutation analysis)
 #' @return Returns five ranks
 #' @keywords five rank method
 #' @export

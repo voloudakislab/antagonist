@@ -13,7 +13,7 @@
 
 ###################################################
 # R library settings (minerva and package specific)
-env  <- "/sc/arion/projects/roussp01a/sanan/Rlibs/230919_R_4.2.0_MultiWAS_Antagonist"
+env  <- "/sc/arion/projects/va-biobank/software/Georgios_dev/240702_R_4.2.0_MultiWAS_Antagonist/"
 libs <- .libPaths()
 libs[3] <- env
 .libPaths(libs)

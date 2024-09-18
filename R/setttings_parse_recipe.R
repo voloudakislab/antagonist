@@ -25,10 +25,14 @@ parse_recipe <- function(
   recipe$signature.dir          <- x[variable == "signature.dir"]$value
   recipe$gene.anno.file         <- x[variable == "gene.anno.file"]$value
   recipe$grep.sig.pattern       <- x[variable == "grep.sig.pattern"]$value
-  recipe$noperm                 <- eval(parse(text = x[variable == "noperm"]$value))
-  recipe$thres.N.vector         <- eval(parse(text = x[variable == "thres.N.vector"]$value))
-  recipe$sig.annotation         <- eval(parse(text = x[variable == "sig.annotation"]$value))
-  recipe$overwrite.intermediate <- eval(parse(text = x[variable == "overwrite.intermediate"]$value))
+  recipe$noperm                 <- tryCatch(eval(parse(text = x[variable == "noperm"]$value)),
+                                            error = function(e) {return(x[variable == "noperm"]$value) })
+  recipe$thres.N.vector         <- tryCatch(eval(parse(text = x[variable == "thres.N.vector"]$value)),
+                                            error = function(e) {return(x[variable == "thres.N.vector"]$value) })
+  recipe$sig.annotation         <- tryCatch(eval(parse(text = x[variable == "sig.annotation"]$value)),
+                                            error = function(e) {return(x[variable == "sig.annotation"]$value) })
+  recipe$overwrite.intermediate <- tryCatch(eval(parse(text = x[variable == "overwrite.intermediate"]$value)),
+                                            error = function(e) {return(x[variable == "overwrite.intermediate"]$value) })
   recipe$model.banlist.grep     <- x[variable == "model.banlist.grep"]$value
   # recipe$prototyping            <- eval(parse(text = x[variable == "prototyping"]$value))
   return(recipe)

@@ -16,7 +16,7 @@ perform_antagonism_lsf_S01_wrapper(
   results.dir = "results/GTP_CDR/",
   n.threads = parallel::detectCores() - 2,
   signature.dir =
-    "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/eachDrug/",
+    "/sc/arion/projects/va-biobank/software/Georgios_dev/forJamie/antagonist_files/drugs",
   gene.anno.file =
     "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/geneinfo_beta.txt",
   grep.sig.pattern = "trt_cp|trt_sh|trt_oe|trt_xpr",

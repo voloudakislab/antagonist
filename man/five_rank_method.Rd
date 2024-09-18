@@ -11,7 +11,7 @@ five_rank_method(thres.N, x, scramble = F)
 
 \item{x}{payload of interest}
 
-\item{scramble}{scramble the z-scores (used for permutation analusis)}
+\item{scramble}{scramble the z-scores (used for permutation analysis)}
 }
 \value{
 Returns five ranks
@@ -29,6 +29,8 @@ This is a multithreaded data.table based re-write of So HC et al. Analysis of
  psychiatry. Nat Neurosci. 2017 Oct;20(10):1342-1349. PMID: 28805813.
 It has been adapted to run for signatures (individual parameters) vs.
 summarized compound scores.
+Of note that in their paper, it is a bit ambiguous what is done, that's why
+the code was migrated ("Permutation_test_compare_expression_corrected.R")
 }
 \keyword{five}
 \keyword{method}

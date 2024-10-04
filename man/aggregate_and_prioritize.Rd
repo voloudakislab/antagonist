@@ -8,6 +8,7 @@ aggregate_and_prioritize(
   dfs.to.process = "results/GTP_CDR/.+_.+_all\\\\.signatures\\\\.AvgRank\\\\.csv\\\\.gz$",
   limit.dfs.to = "trt_cp|trt_sh|trt_oe|trt_xpr",
   limit.models.to = NA,
+  limit.gwass.to = NA,
   output.dir = "results/GTP_CDR/",
   ref.drug = TRT_CP.INFO.20200324,
   ref.cell = CELL.LINE.INFO,
@@ -22,6 +23,8 @@ aggregate_and_prioritize(
 \item{limit.dfs.to}{regular expression for inclusion rlist of datasets.}
 
 \item{limit.models.to}{Limit model_IDs}
+
+\item{limit.gwass.to}{Limit gwas}
 
 \item{output.dir}{Default is "results/CDR_GTP/"}
 

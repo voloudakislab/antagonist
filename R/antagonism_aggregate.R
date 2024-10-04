@@ -7,6 +7,7 @@
 #' @param dfs.to.process dfs to be loaded based on regular expression.
 #' @param limit.dfs.to regular expression for inclusion rlist of datasets.
 #' @param limit.models.to Limit model_IDs
+#' @param limit.gwass.to Limit gwas
 #' @param output.dir Default is "results/CDR_GTP/"
 #' @param compound.type Options are CDR for computational drug repurposing/repositioning and GTP for gene target prioritization which considers trt_sh (shRNA), trt_oe ().
 #' @param drug.file trt_cp specirific parametereCompound file; default is repurposing_drugs_20200324.txt from clue.io
@@ -25,6 +26,7 @@ aggregate_and_prioritize = function(
   #dfs.to.process                  = '/sc/arion/projects/va-biobank/software/Georgios_dev/results/GTP_CDR_prototyping_2RDS_5com_Jamie_SCZ_070924/trt_cp_all.signatures.AvgRank.csv.gz',
   limit.dfs.to                    = "trt_cp|trt_sh|trt_oe|trt_xpr",
   limit.models.to                 = NA,
+  limit.gwass.to                  = NA,
   output.dir                      = "results/GTP_CDR/",
   #output.dir                      = "/sc/arion/projects/va-biobank/software/Georgios_dev/results/GTP_CDR_prototyping_2RDS_5com_Jamie_SCZ_070924",
   # For CDR
@@ -61,6 +63,8 @@ aggregate_and_prioritize = function(
   dfs.to.process <- dfs.to.process[grep(limit.dfs.to, dfs.to.process)]
   # Probe one file to get some info
   gwass  <- unique(MultiWAS::return_df(dfs.to.process[1])$gwas)
+  if (!is.na(limit.gwass.to[1])) {
+    gwass <- gwass[gwass %in% limit.gwass.to] }
 
   x.cdr <- dfs.to.process[grep("trt_cp", dfs.to.process)]
   x.gtp <- dfs.to.process[grep("trt_sh|trt_oe|trt_xpr", dfs.to.process)]
@@ -112,6 +116,16 @@ aggregate_and_prioritize = function(
   # if (discard.non.relevant.cell.lines) {
   #   x <- as.data.table(inner_join(x, cell_lines))
   #   x <- x[!is.na(clinical_phase)]
+  # }
+
+  # TODO: Use a combination approach like this to iterate
+  # tempdf <- fread("output/2.METAXCAN/OUD_df.all.annotated.onlytranscripts.csv.gz")
+  # ucomb  <- unique(tempdf[,c("gwas", "model_ID")]) # this is need for the ancestry specific approach
+  # for (i in seq(nrow(ucomb)) ) {
+  #   aggregate_and_prioritize(
+  #     limit.gwass.to   = ucomb[i]$gwas,
+  #     limit.models.to  = ucomb[i]$model_ID,
+  #     n.cores          = parallel::detectCores()/2)
   # }
 
 

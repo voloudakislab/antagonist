@@ -5,30 +5,79 @@
 \title{pvalue_qqplot}
 \usage{
 gtp_pvalue_qqplot(
-  ps = ppoints(1:10),
+  thistrait = NA,
+  thistissue = NA,
+  stouffer.ma = TRUE,
+  z.score.scaling = "before",
+  use.sample.data = FALSE,
+  twas.df = paste0("output/2.METAXCAN/", basename(getwd()),
+    "_df.all.annotated.onlytranscripts.csv.gz"),
+  twas.feature.name.column = "feature_name",
+  twas.trait.column = "gwas",
+  twas.tissue.column = "model_ID",
+  twas.zscore.column = "zscore",
+  twas.FDR.column = "fdr_trait_model",
+  gtp.df = NA,
+  gtp.feature.name.column = "pert_iname",
+  gtp.zscore.column = "Compound.pseudo.zscore",
+  gtp.FDR.column = "Compound.MW.FDR",
   ci = 0.95,
-  type = c("pvalue", "zscore"),
   stat.prefix = "",
   ppoints.a = NA,
   figsDir = "figs/",
-  figure.name = "pvalue_qqplot",
-  save_plot = F
+  figure.name = "gtp_actions",
+  save_plot = TRUE,
+  plot.height = 5,
+  plot.width = 5,
+  add.lambda = FALSE
 )
 }
 \arguments{
-\item{ps}{Vector of p-values or z-scores.}
+\item{thistrait}{trait name (gwas column for TWAS)}
 
-\item{ci}{Size of the confidence interval, 95% by default.}
+\item{thistissue}{tissue or cell type of choice (doesn't support multiple cell types at this point)}
 
-\item{type}{"pvalue" or "zscore" accepted for the provided statistic}
+\item{stouffer.ma}{perform Stouffer meta-analysis between TWAS and antagonism otherwise it is just z twas + z gtp which is just for visualization (not valid approach)}
+
+\item{z.score.scaling}{scale the combined z scores. "before" MA, "after" MA or "FALSE" (after MA)}
+
+\item{use.sample.data}{use sample data to play with plot parameters}
+
+\item{twas.df}{data frame or file with the TWAS / disease signature data frame}
+
+\item{twas.feature.name.column}{Column name for feature name in disease df. Default is "feature_name"}
+
+\item{twas.trait.column}{Column name for trait/gwas in disease df. Default is "gwas"}
+
+\item{twas.tissue.column}{Column name for tissue/cell type in disease df. Default is "model_ID"}
+
+\item{twas.zscore.column}{Column name for zscore in disease df. Default is "zscore"}
+
+\item{twas.FDR.column}{Column name for FDR in disease df. Default is "fdr_trait_model"}
+
+\item{gtp.df}{data frame or file with the antagonist signature data frame}
+
+\item{gtp.feature.name.column}{Column name for feature name in gtp df. Default is "pert_iname"}
+
+\item{gtp.zscore.column}{Column name for zscore in gtp df. Default is "Compound.pseudo.zscore"}
+
+\item{gtp.FDR.column}{Column name for FDR in gtp df. Default is "Compound.MW.FDR"}
 
 \item{stat.prefix}{text for the method or title of the qqplot}
+
+\item{ppoints.a}{set ppoints a parameter}
 
 \item{figsDir}{Default is "figs/"}
 
 \item{figure.name}{Default is "qqplot_TWAS_vs_FunWAS"}
 
 \item{save_plot}{Save plots in various useful formats}
+
+\item{plot.height}{plot heighth (inches)}
+
+\item{plot.width}{plot width (inches)}
+
+\item{add.lambda}{add lambda to the plot}
 }
 \value{
 returns ggplot graph
@@ -40,6 +89,7 @@ Create a quantile-quantile plot with ggplot2. Script was adapted from: https://s
 Future improvements
 - Stouffer's method or other zscore based meta-analysis
 - Scaling prior to getting z combined
+- Only label if both sig in TWAS and antagonism, otherwise grey
 
 
 Assumptions:

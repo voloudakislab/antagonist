@@ -155,6 +155,8 @@ perform_antagonism <- function(
     }))
   }
 
+  # TODO: Split by GWAS and model_ID
+
   message("Running five methods across each signature")
   if (!file.exists(paste0(paste0(results.dir, "intermediate.files/all.signatures.csv.gz"))) | overwrite.intermediate) {
     # FIXME: this script only outputs one model ID..

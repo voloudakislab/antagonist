@@ -210,19 +210,19 @@ For each object of class postAntag, recipe contains 4 rows in , e.g. for avgRank
 Example for avgRankJob (each of the below responds to an element of the recipe's 'variable' column with its corresponding value from the 'value' column):
 
 avgRankJob: 
-	- run.me = TRUE (regulates whether you want to submit that job)
-	- walltime = 00:10 (sets walltime of the job)
-	- n.threads = 1 (sets the number of cores)
-	- mem = 400 (sets memory per core)
+- run.me = TRUE (regulates whether you want to submit that job)
+- walltime = 00:10 (sets walltime of the job)
+- n.threads = 1 (sets the number of cores)
+- mem = 400 (sets memory per core)
 
 parameters.avgRankJob:
-	- these are parameters we want to pass to the recipe 
+- these are parameters we want to pass to the recipe 
 
 core.avgRankJob:
-	- "/path/to/script.R" (the Job-submission object submits a job that executes this script)
+- "/path/to/script.R" (the Job-submission object submits a job that executes this script)
 
 parent.avgRankJob:
-	- fiveRankJob (determines the which "Parent Job" this job will be referring to, in this example avgRankJob will wait for fiveRankJob to complete, names must be     consistent with the actual name of the parent Job)
+- fiveRankJob (determines the which "Parent Job" this job will be referring to, in this example avgRankJob will wait for fiveRankJob to complete, names must be     consistent with the actual name of the parent Job)
 
 ## Adding a new job (todo: give coding examples here)
 

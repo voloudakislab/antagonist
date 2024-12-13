@@ -191,7 +191,7 @@ As of 12/12/2024 there are 2 classes:
 
 This way you can have "chains of Job objects" executing one after the other.
 
-## Explain variables for each class
+## Variables of each class (in the "Variables" column) (both classes are explained for clarity)
 
 For each object of **class Antag**, recipe contains 3 rows, e.g. for fiveRankJob:
 - fiveRankJob
@@ -205,7 +205,7 @@ For each object of **class postAntag**, recipe contains 4 rows in , e.g. for avg
 - core.avgRankJob
 - parent.avgRankJob
 
-## Values for each of the Job-submission objects explained (todo: insert a screenshot img)
+## Values for each variable (see right above) of class postAntag (containing both classes would be redundant) (todo: insert a screenshot img)
 
 Example for avgRankJob (each of the below responds to an element of the recipe's 'variable' column with its corresponding value from the 'value' column):
 

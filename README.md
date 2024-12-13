@@ -193,17 +193,17 @@ This way you can have "chains of Job objects" executing one after the other.
 
 ## Explain variables for each class
 
-For each object of class Antag, recipe contains 3 rows, e.g. for fiveRankJob:
-	fiveRankJob
-	parameters.fiveRankJob
-	core.fiveRankJob
+For each object of **class Antag**, recipe contains 3 rows, e.g. for fiveRankJob:
+- fiveRankJob
+- parameters.fiveRankJob
+- core.fiveRankJob
 
 
-For each object of class postAntag, recipe contains 4 rows in , e.g. for avgRankJob:
-	avgRankJob
-	parameters.avgRankJob
-	core.avgRankJob
-	parent.avgRankJob
+For each object of **class postAntag**, recipe contains 4 rows in , e.g. for avgRankJob:
+- avgRankJob
+- parameters.avgRankJob
+- core.avgRankJob
+- parent.avgRankJob
 
 ## Values for each of the Job-submission objects explained (todo: insert a screenshot img)
 

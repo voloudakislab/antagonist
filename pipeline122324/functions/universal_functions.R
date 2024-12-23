@@ -9,6 +9,21 @@ setGeneric('collect_submitJob.class', function(object, ...) standardGeneric('col
 #####################
 # NON-SPECIFIC FUNCTIONS
 
+extractParameters <- function(JobSpecParameters){
+  
+  # clear quotas, quotas help in csv format. clear 'spaces' (better string manipulation)
+  columnNamesStr = gsub('"', '', columnNamesStr)
+  columnNamesStr = gsub(' ', '', columnNamesStr)
+  pairedColumnNames = unlist(strsplit(columnNamesStr, split = ','))
+  
+  columnNamesList = list() 
+  for(thispair in pairedColumnNames){
+    sublistTitle = unlist(strsplit(thispair, split = '='))[1]
+    columnNamesList[[sublistTitle]] = unlist(strsplit(thispair, split = '='))[2]
+  }
+  return(columnNamesList)
+}
+           
 # protects from 'double-dash' errors in bash
 ma_paste0 = function(...) return(gsub('/+', '/', paste0(...)))
 

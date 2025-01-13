@@ -1,0 +1,30 @@
+variable,value,notes
+df,/sc/arion/projects/va-biobank/PROJECTS/marios_temp/parallel_antagonism/materials/TWAS/donghoon_project/GPNMB.csv,"twas or DGE dataframe, can provide path"
+working.directory,/sc/arion/projects/va-biobank/PROJECTS/marios_temp/parallel_antagonism/working.directories/donghoon_project_GPNMB_V13,''
+columnNames,"feature = feature, statistic = zscore, trait = gwas, source = model_ID",""
+results.dir,results/GTP_CDR,''
+fiveRankJob,"run.me = TRUE, walltime = 00:01, n.threads = 60, mem = 333",Job settings
+parameters.fiveRankJob,"noperm = 100, thres.N.vector = c(50,100,250,500), n.threads = 20",there are imported by the core function (in NON parametric way)
+core.fiveRankJob,/sc/arion/projects/va-biobank/PROJECTS/marios_temp/parallel_antagonism/local_antagonist_package/perform_antagonism_V3/setup/test_antagonist_S01PA_core.R,/path/to/core/function
+avgRankJob,"run.me = TRUE, walltime = 00:15, n.threads = 1, mem = 4000",Job settings (maintain quotas to avoid errors)
+parameters.avgRankJob,'',these are imported by the core function
+core.avgRankJob,/sc/arion/projects/va-biobank/PROJECTS/marios_temp/parallel_antagonism/local_antagonist_package/perform_antagonism_V3/setup/test_avgrank_S01PA_core.R,/path/to/core/function
+parent.avgRankJob,fiveRankJob,job is executed after this job
+wilcoxRankJob,"run.me = TRUE, walltime = 00:10, n.threads = 95, mem = 250",Job settings (maintain quotas to avoid errors)
+parameters.wilcoxRankJob,'',these are imported by the core function
+core.wilcoxRankJob,/sc/arion/projects/va-biobank/PROJECTS/marios_temp/parallel_antagonism/local_antagonist_package/perform_antagonism_V3/setup/test_aggregate_and_prioritize_core.R,/path/to/core/function
+parent.wilcoxRankJob,avgRankJob,job is executed after this job
+robustRankAggJob,"run.me = FALSE, walltime = 01:00, n.threads = 1, mem = 2000",Job settings (maintain quotas to avoid errors)
+parameters.robustRankAggJob,"tissues = c('PolyXcan.LS', 'ADAM_GPNMB'), levels = c('cdr_target_level.csv','cdr_launched_compound_level.csv','cdr_all_compound_level.csv', 'cdr_indication_level.csv', 'cdr_moa_level.csv')",these are imported by the core function
+core.robustRankAggJob,/sc/arion/projects/va-biobank/PROJECTS/marios_temp/parallel_antagonism/local_antagonist_package/perform_antagonism_V3/setup/test_robust_rank_aggregation.R,/path/to/core/function
+parent.robustRankAggJob,wilcoxRankJob,job is executed after this job
+signature.dir,/sc/arion/projects/va-biobank/PROJECTS/cdr.comparative.efficacy.marios/Resources/cmap_l1000_2021-11-20/trt_cp_only,''
+gene.anno.file,/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/geneinfo_beta.txt,''
+grep.sig.pattern,trt_cp,''
+sig.annotation,SIG.INFO.20211120,use eval parse text
+overwrite.intermediate,TRUE,use eval parse text
+model.banlist.grep,:: Transcripts ::|:: H3K4me3 ::|:: H3K27ac ::|:: CA ::,''
+dryrun,FALSE,use eval parse text
+prototyping,NA,use eval parse text
+account.name,acc_va-biobank,''
+queue,express,''

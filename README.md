@@ -94,25 +94,8 @@ signature.dir <- "ExpandedCMapLINCS2020/"
 ```
 
 
-# STEP 1: Run antagonism (outdated)
+# STEP 1: Run antagonism
 For one trait-tissue combination, it takes about 23,800 thread-minutes on an Intel 10th gen core.
-<<<<<<< HEAD
-=======
-## Interactive version
-```
-library(antagonist)
-
-# Step 1
-perform_antagonism()
-
-# Step 2
-```
-## LSF version 
-For now only works on minerva. Potentially adding ability to run in other platforms in the future.
-Todo:
-- make logs folder
-- sh run ml R in bsub
->>>>>>> 63a8b6435046fff5029c992bce6fc3e8c0863e58
 
 ```
 perform_antagonism(
@@ -121,7 +104,6 @@ gene.anno.file = paste0(signature.dir, "geneinfo_beta.txt"
 )
 ```
 
-<<<<<<< HEAD
 # Step 2 Aggregate and prioritize()
 
 ```
@@ -136,97 +118,6 @@ gene.anno.file = paste0(signature.dir, "geneinfo_beta.txt"
 # Inspect the output
 
 # Additional figures
-=======
-# Run Pipeline (only works in Minerva for now)
-## Setup
-- Create a directory to store all your recipes e.g. /path/to/recipes/ 
-- Store in the above directory file my_recipe.csv
-- Edit the antagonist_wrapper_V2.R in the following way
-```
-path_to_recipes = '/path/to/recipes/'
-
-recipe.file = paste0(path_to_recipes, 'my_recipe.csv')
-
-```
-## Execution
-Execute the Rscript in 'nohup' mode because the execution itself may take quite some time:
-```
-nohup Rscript antagonist_wrapper_V2.R > output.log 2>&1 &
-```
-
-# Pipeline Explained
-## Summary / TLDR
-In general you can run the pipeline both step-wise (each part executed on its own) and all at once.
-I discuss this in detail further below, but briefly you can do this by switching run.me to TRUE/FALSE.
-
-In my efforts to keep the code as modulated/readable as possible I organized the job submission operations
-in different objects. In this README; objects that are used to submit jobs will be referenced as "Job-submission objects"
-
-Some parameters of the Job-submission objects are determined inside the R script, while some others are passed to the object through the recipe.
-
-Each Job-submission object submits a job that will execute a script (which can be either R or python), which I will from now on reference as "Job-script".
-
-I recommend that you keep open the Recipe example as you continue further in this guide.
-
-## Recipe Columns explained
-Most of the parameters of the submitted jobs are passed to the Job-submission object through the Recipe.
-Recipe is pretty self-explanatory but here goes nothing; 
-elements of the 'variable' column will be "same name variables" in the wrapper script,
-while elements of the 'value' column will be the values to be assigned to the variables of the row they are found in.
-
-## Classes explained
-As of 12/12/2024 there are 2 classes:
-	class Antag (antagonizes signatures)
-	class postAntag (processes results of class Antag or of class postAntag; objects of this class will usually be dependent on their "parent Job" 
-	meaning they will wait for the completion of the parent Job before proceeding in executing their own job (through bsub -w))
-
-This way you can have "chains of Job objects" executing one after the other.
-
-## Variables of each class (in the "Variables" column) (both classes are explained for clarity)
-
-For each object of **class Antag**, recipe contains 3 rows, e.g. for fiveRankJob:
-- fiveRankJob
-- parameters.fiveRankJob
-- core.fiveRankJob
-
-
-For each object of **class postAntag**, recipe contains 4 rows in , e.g. for avgRankJob:
-- avgRankJob
-- parameters.avgRankJob
-- core.avgRankJob
-- parent.avgRankJob
-
-## Values for each variable (see right above) of class postAntag (containing both classes would be redundant) (todo: insert a screenshot img)
-
-Example for avgRankJob (each of the below responds to an element of the recipe's 'variable' column with its corresponding value from the 'value' column):
-
-**avgRankJob**: 
-- run.me = TRUE (regulates whether you want to submit that job)
-- walltime = 00:10 (sets walltime of the job)
-- n.threads = 1 (sets the number of cores)
-- mem = 400 (sets memory per core)
-
-**parameters.avgRankJob**:
-- these are parameters we want to pass to the recipe 
-
-**core.avgRankJob**:
-- "/path/to/script.R" (the Job-submission object submits a job that executes this script)
-
-**parent.avgRankJob**:
-- fiveRankJob (determines the which "Parent Job" this job will be referring to, in this example avgRankJob will wait for fiveRankJob to complete, names must be     consistent with the actual name of the parent Job)
-
-## Adding a new job (todo: give coding examples here)
-
-All the above being said, to add a job you have to:
-- Use another job as template; for example copy-paste the rows avgRankJob, parameters.avgRankJob , core.avgRankJob, parent.avgRankJob.
-- Then edit each of the above to xyzJob, parameters.xyzJob, core.xyzJob, parent.xyzJob
-- Assign the appropriate values to the value column.
-- Create the object in the wrapper script (I recommend the object to be created after the object to which it will depend on, e.g. avgRankJob after fiveRankJob)
-- Add the object to the pipeline.
-
-
-
->>>>>>> 63a8b6435046fff5029c992bce6fc3e8c0863e58
 
 
 

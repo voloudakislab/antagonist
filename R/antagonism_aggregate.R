@@ -50,8 +50,8 @@ aggregate_and_prioritize = function(
   '%!in%' <- function(x,y)!('%in%'(x,y))
 
   ### SETTING THE PARAMETERS ###
-  ref.drug <- MultiWAS::return_df(ref.drug)
-  ref.cell <- MultiWAS::return_df(ref.cell)
+  ref.drug <- return_df(ref.drug)
+  ref.cell <- return_df(ref.cell)
 
   ### LOAD THE DATA ###
   # TODO: Load the files from the save directory and then automatically do appropriate actions.
@@ -62,7 +62,7 @@ aggregate_and_prioritize = function(
     full.names = T )
   dfs.to.process <- dfs.to.process[grep(limit.dfs.to, dfs.to.process)]
   # Probe one file to get some info
-  gwass  <- unique(MultiWAS::return_df(dfs.to.process[1])$gwas)
+  gwass  <- unique(return_df(dfs.to.process[1])$gwas)
   if (!is.na(limit.gwass.to[1])) {
     gwass <- gwass[gwass %in% limit.gwass.to] }
 
@@ -72,7 +72,7 @@ aggregate_and_prioritize = function(
 
   ### CDR ###
   if (length(x.cdr) != 0) {
-    x.cdr <- MultiWAS::return_df(x.cdr)
+    x.cdr <- return_df(x.cdr)
     x.cdr <- as.data.table(dplyr::left_join(x.cdr, ref.drug))
     x.cdr$readily.repurposable <- !is.na(x.cdr$clinical_phase)
 
@@ -89,7 +89,7 @@ aggregate_and_prioritize = function(
       lapply(
         x.gtp,
         FUN = function(z) {
-          MultiWAS::return_df(z)
+          return_df(z)
         }))
 
     # Keep at least min.experiments
@@ -135,7 +135,7 @@ aggregate_and_prioritize = function(
 
       message(paste0("Now processing ", thisgwas))
       this.output.dir <- paste0(output.dir, "/", thisgwas, "/")
-      MultiWAS::gv_dir.create(this.output.dir)
+      gv_dir.create(this.output.dir)
 
       ### MAIN SCRIPT ###
       pbapply::pblapply(
@@ -161,12 +161,12 @@ aggregate_and_prioritize = function(
               FUN = function(limit.models.to) {
                 message(paste0("Now working on: ", paste(limit.models.to, collapse = ", ")))
                 if (!is.na(limit.models.to[1])) x <- x[model_ID %in% limit.models.to] # relimit to model under question
-                modelprefix <- as.character(MultiWAS::make_java_safe(paste(limit.models.to, collapse = "_X_")))
+                modelprefix <- as.character(make_java_safe(paste(limit.models.to, collapse = "_X_")))
                 if (modelprefix == "NA") modelprefix <- "ALL"
                 this.output.dir <- paste0(
                   this.output.dir, "/",
                   modelprefix, "/")
-                MultiWAS::gv_dir.create(this.output.dir)
+                gv_dir.create(this.output.dir)
 
                 ###########################
                 # Density plot for Avg rank

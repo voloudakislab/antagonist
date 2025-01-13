@@ -95,7 +95,7 @@ gtp_pvalue_qqplot  <- function(
       "fdr_trait_model"    = c(ppoints(99), 1e-10)
     )
   } else {
-    twas.df              <- MultiWAS::return_df(twas.df)
+    twas.df              <- return_df(twas.df)
   }
   setnames(twas.df, twas.feature.name.column,       "feature_name")
   setnames(twas.df, twas.trait.column,  "gwas")
@@ -128,15 +128,15 @@ gtp_pvalue_qqplot  <- function(
   } else {
     if (is.na(as.character(gtp.df [1])[1])) {
       # if it is NA retrieve it
-      gtp.df <- MultiWAS::return_df(paste0(
+      gtp.df <- return_df(paste0(
         "results/GTP_CDR/",
         thistrait, "/",
-        MultiWAS::make_java_safe(thistissue), "/",
+        make_java_safe(thistissue), "/",
         thistrait, "_gtp_compound_level.csv"
       ))
     } else {
       # if it is not NA just return the data.frame
-      twas.df  <- MultiWAS::return_df(twas.df)
+      twas.df  <- return_df(twas.df)
     } }
   setnames(gtp.df, gtp.feature.name.column,  "feature_name") # for joining
   setnames(gtp.df, gtp.zscore.column,        "Compound.pseudo.zscore")
@@ -157,14 +157,14 @@ gtp_pvalue_qqplot  <- function(
   if (z.score.scaling == "after") {
     ps[, z.combined := scale(z.combined)]
   }
-  ps[, p.combined := MultiWAS::z2p(z.combined)]
+  ps[, p.combined := z2p(z.combined)]
   ps[, FDR.combined := p.adjust(p.combined, method = "BH")]
   ps[, intervention := ifelse(z.combined*Compound.pseudo.zscore < 0, "unclear", ifelse(z.combined > 0, "downregulation", "upregulation"))]
   # 24: upregulation arrow up, 25 downregulation arrow down, 21 unclear circle
   ps <- ps[order(p.combined)]
   fwrite(ps, paste0(
     "results/GTP_CDR/",thistrait, "/",
-    MultiWAS::make_java_safe(thistissue), "/prioritization",
+    make_java_safe(thistissue), "/prioritization",
     ifelse(stouffer.ma, ".stouffer", ""),
     ifelse(isFALSE(z.score.scaling), "",
            ifelse(z.score.scaling == "before", ".scaled.before", "scaled.after")),
@@ -268,7 +268,7 @@ gtp_pvalue_qqplot  <- function(
     )
   cowplot::ggsave2(
     filename = paste0("results/GTP_CDR/",thistrait, "/",
-                      MultiWAS::make_java_safe(thistissue), "/prioritization",
+                      make_java_safe(thistissue), "/prioritization",
                       ifelse(stouffer.ma, ".stouffer", ""),
                       ifelse(isFALSE(z.score.scaling), "",
                              ifelse(z.score.scaling == "before", ".scaled.before", "scaled.after")),
@@ -277,7 +277,7 @@ gtp_pvalue_qqplot  <- function(
     width  = plot.width,  height = plot.height )
   cowplot::ggsave2(
     filename = paste0("results/GTP_CDR/",thistrait, "/",
-                      MultiWAS::make_java_safe(thistissue), "/prioritization",
+                      make_java_safe(thistissue), "/prioritization",
                       ifelse(stouffer.ma, ".stouffer", ""),
                       ifelse(isFALSE(z.score.scaling), "",
                              ifelse(z.score.scaling == "before", ".scaled.before", "scaled.after")),

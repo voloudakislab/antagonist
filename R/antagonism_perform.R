@@ -82,7 +82,7 @@ perform_antagonism <- function(
   # library(data.table)
 
   # Preparing TWAS
-  df               <- MultiWAS::return_df(df)
+  df               <- return_df(df)
 
   # Preparing columns
   df$feature   <- df[[column.feature]]
@@ -101,8 +101,8 @@ perform_antagonism <- function(
 
 
   # Preparing Directories
-  MultiWAS::gv_dir.create(results.dir)
-  MultiWAS::gv_dir.create(paste0(results.dir, "intermediate.files/"))
+  gv_dir.create(results.dir)
+  gv_dir.create(paste0(results.dir, "intermediate.files/"))
 
   # Identifying signatures
 
@@ -339,7 +339,7 @@ perform_antagonism <- function(
     ) # do.call end.
 
     # Annotate
-    sig.annotation <- MultiWAS::return_df(sig.annotation)
+    sig.annotation <- return_df(sig.annotation)
     # hist(as.data.table(table(as.data.table(dplyr::left_join(output, sig.annotation))$pert_iname, useNA = "always"))$N)
     output <- as.data.table(dplyr::left_join(output, sig.annotation))
 

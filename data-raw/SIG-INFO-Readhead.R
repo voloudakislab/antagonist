@@ -14,7 +14,7 @@ sapply(
   FUN = function(i) {
     load(as.character(files[[i]]))
     # message(i)
-    x <- MultiWAS::return_df(get(i))
+    x <- return_df(get(i))
     # print(x)
     x <- x[
       ,c("sig_id", "pert_id", "pert_iname", "cell_id", "pert_dose", "pert_time",

@@ -1,156 +1,123 @@
 # antagonist
-Gene target prioritization and computational drug repurposing
+
+A multithreaded R package and wrapper for gene target prioritization and computational drug repurposing.
+
+*If you use this package for gene target prioritization (GTP), cite::*
+
+Voloudakis G, Vicari JM, Venkatesh S, Hoffman GE, Dobrindt K, Zhang W, Beckmann ND, Higgins CA, Argyriou S, Jiang S, Hoagland D, Gao L, Corvelo A, Cho K, Lee KM, Bian J, Lee JS, Iyengar SK, Luoh SW, Akbarian S, Striker R, Assimes TL, Schadt EE, Lynch JA, Merad M, tenOever BR, Charney AW; Mount Sinai COVID-19 Biobank; VA Million Veteran Program COVID-19 Science Initiative; Brennand KJ, Fullard JF, Roussos P. A translational genomics approach identifies IL10RB as the top candidate gene target for COVID-19 susceptibility. NPJ Genom Med. 2022 Sep 5;7(1):52. doi: [10.1038/s41525-022-00324-x](https://doi.org/10.1038/s41525-022-00324-x). PMID: [36064543](https://pubmed.ncbi.nlm.nih.gov/36064543/); PMCID: PMC9441828.
+
+*If you use this package for computational drug repurposing (CDR), cite:*
+
+Voloudakis G, Lee KM, Vicari JM, Zhang W, Hoagland D, Venkatesh S, Bian J, Anyfantakis M, Wu Z, Rahman S, Gao L, Cho K, Lee JS, Iyengar SK, Luoh S-W21,22, Themistocles L. Assimes16,17, Gabriel E. Hoffman1-4, Benjamin R. tenOever9-11, John F. Fullard1-4‡, Julie A. Lynch8,12‡, Panos Roussos1-4,6,7‡†.
+
+*If you use the 5-method rank (default and only option at this moment), please cite the relevant paper:*
 
 
-# Expected inputs 
-
-## Disease file format (csv, csv.gz or RDS)
-The input df usually is a TWAS/GFI output file. If another file is used thene some column name changes are needed to work as expected. The required columns are as follows (with default names):
-Column      | description
----         | ---
-`feature`   | expected input is ENSEMBL ID and currently only works with genes
-`zscore`    | z-score statistic
-`gwas`      | trait name
-`model_ID`  | disease signature source, e.g. microglia, DLPFC, meta-analysis, etc.
-
-## Recipe file format (csv)
+# Computational environment requirements
+1. A linux computer (package has been developed and tested in linux; may work in other operating systems but it hasn't been tested)
+2. R>=4.0
+3. Dependencies as per `DESCRIPTION` file
+4. Lots of RAM if you want it to run fast over a higher number of threads
 
 # Installation
-
-## Local
 ```
-MultiWAS::gv_install_packages(
-cran.packages = c("optparse"),
-bioc.packages = c("cmapR")
-)
-```
-## Minerva (interactive), run the code line by line.
-```
-ml pigz/2.3.1
-ml git
-ml R
-R
-
-envName    <- "/sc/arion/projects/roussp01a/sanan/Rlibs/230919_R_4.2.0_MultiWAS_Antagonist"
-user.name  <- readline("What is your github username?\n")
-user.email <- readline("What is your github email?\n")
-user.PAT   <- readline("What is your github token?\n")
-
-libs <- .libPaths()
-libs[3] <- envName # replaces user path /hpc/users/[user]/.Rlib
-libs2 <- libs[c(3,1)] # excludes bioconductor (2) and shared R libraries 
-# .libPaths(libs) # doesn't work
-.libPaths(libs2) # works
-
-usethis::use_git_config(user.name = user.name, user.email = user.email)
-credentials::set_github_pat(user.PAT,force_new =T) # Will need to reenter PAT in command line. Minerva often defaults to environmental PAT which can cause conflicts
-
-options(timeout=9999999)
-
-#Repeat following until libraries are installed. In some cases certain libraries are known to cause issues and may need to be independently installed with another command
-.libPaths(libs)
-remotes::install_github("voloudakislab/MultiWAS", build = FALSE)
-remotes::install_github("voloudakislab/antagonist", build = FALSE)
-
-.libPaths(libs2)
-remotes::install_github("voloudakislab/MultiWAS", build = FALSE)
-remotes::install_github("voloudakislab/antagonist", build = FALSE)
+devtools::install_github("DiseaseNeuroGenomics/antagonist") # link for the center's repository
+# devtools::install_github("voloudakislab/antagonist") # Voloudakis lab development link
 ```
 
-# Updating the package
+# Overview of the inputs
+1. [The perturbagen signature library](#-perturbagen-signature-library): a data.frame with known transcriptional signatures for compounds/shRNAs, etc, in this case LINCS
+2. A disease signature: a data.frame with genes and their respective changees (can be logFC, z-score, effect sizes, etc.)
+3. A recipe file: this is only required with job schedulers such as IBM's LSF; the wiki will be updated in the future for such applications.
 
-## Minerva
-Interactive bash
+# Perturbagen signature library
+We are currently using the Expanded CMap LINCS Resource 2020 signature files from clue.io. For installation of the perturbagen library, a total of 25GB are required (11.5 GB after deleting intermediate files). We are using level5 signatures (see picture with different levels below).
+![LINCS signature level overview](/data-raw/readme.images/L1000_Lvl5.png)
+
+## Download the Expanded CMap LINCS Resource 2020 signature files from clue.io:
+We are currently using the version last updated on 11/23/201 (created on 11/20/2020) which can be downloaded [here](https://clue.io/data/CMap2020#LINCS2020).
+
+The following files are required:
+
+|File name                              | Data matrix  | File size | MD5 Check sum
+|---                                    | ---          | ---       | ---
+|geneinfo_beta.txt                      | N/A          |   1.09 MB | 45c725d17ce6c377f1e7de07b821a5f0
+|siginfo_beta.txt                       | N/A          | 443.69 MB | ab609fc04fab21180b07833119d1c7b6
+|level5_beta_ctl_n58022x12328.gctx      | 58022x12328  |   2.66 GB | 4c70a6939637670d185775f2a2d98d67
+|level5_beta_trt_cp_n720216x12328.gctx  | 720216x12328 |  33.08 GB | 9a82806e2aba6ec2a866cba77bd57fda
+|level5_beta_trt_misc_n8283x12328.gctx  | 8283x12328   | 389.61 MB | b58bcaa628f9f2afeadbb815b49a7684
+|level5_beta_trt_oe_n34171x12328.gctx   | 34171x12328  |   1.57 GB | a068e259e2d71676e8fa46a2d7a2de86
+|level5_beta_trt_sh_n238351x12328.gctx  | 238351x12328 |  10.95 GB | 16952edbdc39756370a075b25f874029
+|level5_beta_trt_xpr_n142901x12328.gctx | 142901x12328 |   6.07 GB | c852ca26affaa144f1b042463036702b
+
+Download and save these in a folder that will be used for storage of these resource, for the purposes of this tutorial we will use `ExpandedCMapLINCS2020/`. 
+
+Out of the 1,201,944 signatures the vast majority are not considered reproducible or distinct (`is_gold`; n=237,922; distil_cc_q75 >= 0.2 and pct_self_rank_q25 <= 0.05), or may be further subsetted to remove replicates as much as possible (`is_exemplar`; n=423,422) as described in the [GEO CMap LINCS User Guide v2.1](https://docs.google.com/document/d/1q2gciWRhVCAAnlvF2iRLuJ7whrGP6QjpsCMq1yWz7dU). The breakdown is as follows:
+
+|                  | is_exemplar (FALSE) | is_exemplar (TRUE)
+|---               | ---                 | ---
+|is_gold (FALSE)   | 668,957             | 295,065
+|is_gold (TRUE)    | 109,565             | 128,357
+
+For our projects we include all `is_gold` signatures and do no filtering based on `is_exemplar` status. However, filtering for both will half the computational costs.
+
+
+## Chunk the signature files in `.RDS` objects
+This is done for easier batch processing and improved IO performance when running multiple versions.
 ```
-ml pigz/2.3.1
-ml git
-ml R
-R
-```
-Interactive R
-```
-# Run this line by line
-user.name  <- readline("What is your github username?\n")
-user.email <- readline("What is your github email?\n")
-user.PAT   <- readline("What is your github token?\n")
-
-# 
-envName    <- "/sc/arion/projects/roussp01a/sanan/Rlibs/230919_R_4.2.0_MultiWAS_Antagonist"
-libs <- .libPaths()
-libs[3] <- envName # replaces user path /hpc/users/[user]/.Rlib
-libs2 <- libs[c(3,1)] # excludes bioconductor (2) and shared R libraries 
-.libPaths(libs2) # works
-usethis::use_git_config(user.name = user.name, user.email = user.email)
-
-# Run this and provide the PAT
-credentials::set_github_pat(user.PAT,force_new =T) # Will need to reenter PAT in command line. Minerva often defaults to environmental PAT which can cause conflicts
-
-# Run this
-options(timeout=9999999)
-.libPaths(libs2)
-remotes::install_github("voloudakislab/antagonist", build = FALSE, upgrade = "never")
-```
-To reload the package in an interactive R session
-```
-MultiWAS::reload_package("antagonist")
+signature.dir <- "ExpandedCMapLINCS2020/" # where the .gctx files were downloaded.
+antagonist::split_gctx(parent.signature.dir = signature.dir)
 ```
 
-# Resources disclaimer
+## Disease file format (csv, csv.gz or RDS)
+The input data frame usually is a TWAS/GFI/DGE output file. If another file is used then some column name changes are needed to work as expected. The required columns are as follows (with default names):
 
+|Column      | description
+|---         | ---
+|`feature`   | expected input is ENSEMBL ID and currently only works with genes
+|`zscore`    | z-score statistic
+|`gwas`      | trait name
+|`model_ID`  | disease signature source, e.g. microglia, DLPFC, meta-analysis, etc.
 
+Of note, human transcripts are expected. If you need to use data from another species, genes have to be mapped to their othologs first. 
+
+For the purposes of the tutorial we will use 
+
+!!! Add file for testing !!!
+
+# Run the analyses
+Setting up the variables and loading the package
+
+```
+library(antagonism)
+signature.dir <- "ExpandedCMapLINCS2020/"
+```
 
 
 # STEP 1: Run antagonism
 For one trait-tissue combination, it takes about 23,800 thread-minutes on an Intel 10th gen core.
-## Interactive version
-```
-library(antagonist)
-
-# Step 1
-perform_antagonism()
-
-# Step 2
-```
-## LSF version
-For now only works on minerva. Potentially adding ability to run in other platforms in the future.
-Todo:
-- make logs folder
-- sh run ml R in bsub
 
 ```
-bsub -P acc_va-biobank -q premium -n 30 -W 24:00 -Ip /bin/bash
-ml R
-library=/sc/arion/projects/roussp01a/sanan/Rlibs/230919_R_4.2.0_MultiWAS_Antagonist
-# library=/home/georgios/R/x86_64-pc-linux-gnu-library/4.2
-recipe=/sc/arion/projects/va-biobank/PROJECTS/2023_09_microglia_DGE_gtp_cdr/project.recipe.csv
-
-# Step 1 mothership
-
-bsub -J Ant_S01_mothership -P acc_va-biobank -q premium -n 20 -R span[hosts=1] \
--R rusage[mem=3000] -W 1440 --oo logs/S01mothership.out -oe logs/S01mothership.err \
--L /bin/bash Rscript --verbose $library/antagonist/exec/antagonist_S01_wrapper.sh --recipe $recipe \
---prototyping 2
-
-bsub -J Ant_S01_mothership -P acc_va-biobank -q premium -n 20 -R span[hosts=1] \
--R rusage[mem=3000] -W 1440 --oo logs/S01mothership.out -oe logs/S01mothership.err \
--L /bin/bash Rscript --verbose $library/antagonist/exec/antagonist_S01_wrapper.R --recipe $recipe \
---prototyping 2
-
-
-
-# $library/exec/antagonist_S01_wrapper.R --recipe $recipe --prototyping 2 # if you want to run with just two signature files for troubleshooting
-
-# Step 2 mothership
-# Waits for the first step to be completed
-
-
+perform_antagonism(
+signature.dir  = paste0(signature.dir, "eachDrug/",
+gene.anno.file = paste0(signature.dir, "geneinfo_beta.txt"
+)
 ```
 
+# Step 2 Aggregate and prioritize()
+
+```
+aggregate_and_prioritize(
+signature.dir  = paste0(signature.dir, "eachDrug/",
+gene.anno.file = paste0(signature.dir, "geneinfo_beta.txt"
+)
+```
+
+> Please note that the default way of meta-analyzing the results is pulling all the tissues or cell types (whatever is in model_ID) together.
+
+# Inspect the output
+
+# Additional figures
 
 
-# Parameters for external resource file location
-## This should be idea
-parent.signature.dir = "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/"
-signature.dir        = "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/eachDrug/"
-gene.anno.file       = "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/geneinfo_beta.txt"
-sig.annotation.file  = "/sc/arion/projects/va-biobank/resources/CMap/cmap_l1000_2021-11-20/siginfo_beta.txt"
+

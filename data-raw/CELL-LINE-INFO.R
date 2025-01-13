@@ -9,7 +9,7 @@ ref.cell.file <- system.file(
 repurposing_cell_lines <- function(
     cell.file = ref.cell.file
 ){
-  return(MultiWAS::return_df(cell.file)[, c("cell_id", "cell_desc")])
+  return(return_df(cell.file)[, c("cell_id", "cell_desc")])
 }
 
 CELL.LINE.INFO <- repurposing_cell_lines()

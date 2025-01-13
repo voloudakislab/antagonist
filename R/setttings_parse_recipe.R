@@ -9,19 +9,6 @@ parse_recipe <- function(
     recipe.file
 ){
 
-  # x <- MultiWAS::return_df(recipe.file)
-  # Decrease reliance to MultiWAS package for potential publication
-
-  return_df <- function(x) {
-    if (!is.character(x)) {
-      x <- as.data.table(x, keep.rownames = T)
-    } else {
-      if (grepl(".RDS$", x, ignore.case = T)) {
-        x <- as.data.table(readRDS(x)) } else x <- fread(x)
-    }
-    return(x)
-  }
-
   x <- return_df(recipe.file)
 
   recipe <- list()

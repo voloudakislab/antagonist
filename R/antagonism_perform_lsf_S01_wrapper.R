@@ -90,16 +90,16 @@ perform_antagonism_lsf_S01_wrapper <- function(
 
   #######################
   # Preparing Directories
-  MultiWAS::gv_dir.create(results.dir)
-  MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/"))
-  MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/5rank/S01A"))
-  MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/scripts/S01A"))
-  MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/logs/S01A"))
-  MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/5rank/S01B"))
-  MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/scripts/S01B"))
-  MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/logs/S01B"))
+  gv_dir.create(results.dir)
+  gv_dir.create(paste0(results.dir, "/intermediate.files/"))
+  gv_dir.create(paste0(results.dir, "/intermediate.files/5rank/S01A"))
+  gv_dir.create(paste0(results.dir, "/intermediate.files/scripts/S01A"))
+  gv_dir.create(paste0(results.dir, "/intermediate.files/logs/S01A"))
+  gv_dir.create(paste0(results.dir, "/intermediate.files/5rank/S01B"))
+  gv_dir.create(paste0(results.dir, "/intermediate.files/scripts/S01B"))
+  gv_dir.create(paste0(results.dir, "/intermediate.files/logs/S01B"))
   # Preparing TWAS
-  df               <- MultiWAS::return_df(df)
+  df               <- return_df(df)
   # Preparing columns
   df$feature   <- df[[column.feature]]
   df$zscore    <- df[[column.statistic]]
@@ -350,7 +350,7 @@ perform_antagonism_lsf_S01_wrapper <- function(
 ) # do.call end.
 #
 #     # Annotate
-    sig.annotation <- MultiWAS::return_df(sig.annotation)
+    sig.annotation <- return_df(sig.annotation)
     output <- as.data.table(dplyr::left_join(output, sig.annotation))
 #
 #     # Save

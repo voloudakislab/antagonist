@@ -63,12 +63,12 @@ showcase_method_cdr_gtp <- function(
   figure.assay.type             = "TWAS"
 ){
   # finding what the signature is
-  sig.info <- MultiWAS::return_df(sig.info)
+  sig.info <- return_df(sig.info)
   sig.info <- sig.info[pert_iname == perturbagen]
   perturbagen.type <- unique(sig.info$pert_type)
 
   # Process TWAS
-  twas = MultiWAS::return_df(twas)
+  twas = return_df(twas)
   twas$feature      <- twas[[twas.feature.column.name]]
   twas$feature_name <- twas[[twas.feature.name.column.name]]
   twas$zscore       <- twas[[twas.zscore.column.name]]
@@ -143,11 +143,11 @@ showcase_method_cdr_gtp <- function(
   names(twas.vs.compounds) <- gsub(":|-", ".", names(twas.vs.compounds))
 
   library(ggpubr)
-  p1 <- MultiWAS::my_ggscatter(twas.vs.compounds,
+  p1 <- my_ggscatter(twas.vs.compounds,
                                x              = "zscore",
                                y              = names(twas.vs.compounds)[ncol(twas.vs.compounds)] ,
                                color.group    = "Group",
-                               custom.colors  = c("black", MultiWAS::vector_to_colors(unique(twas.vs.compounds$Group))),
+                               custom.colors  = c("black", vector_to_colors(unique(twas.vs.compounds$Group))),
                                # usethislabel   = "Text",
                                xlab           = paste0(figure.assay.type, " zscore for ",
                                                        ifelse("tissue" %in% names(twas.vs.compounds),
@@ -157,10 +157,10 @@ showcase_method_cdr_gtp <- function(
                                ylab           = paste0(perturbagen, " signature for ", sig.info[sig_id == perturbagen.sig_id]$cell_id))
   p1 <- p1 + guides(color=guide_legend(nrow=2, byrow=TRUE))
   this.filename <- paste0(gtp.cdr.dir, "intermediate.files/",
-                          MultiWAS::make_java_safe(twas.trait), ".",
-                          MultiWAS::make_java_safe(twas.model), ".",
-                          MultiWAS::make_java_safe(perturbagen), ".",
-                          MultiWAS::make_java_safe(perturbagen.sig_id))
+                          make_java_safe(twas.trait), ".",
+                          make_java_safe(twas.model), ".",
+                          make_java_safe(perturbagen), ".",
+                          make_java_safe(perturbagen.sig_id))
   ggsave((paste0(this.filename, ".pdf")), p1, width = 4, height = 4)
   ggsave((paste0(this.filename, ".png")), p1, width = 4, height = 4, units = "in")
   fwrite(twas.vs.compounds, paste0(this.filename, ".csv"))
@@ -175,8 +175,8 @@ showcase_method_cdr_gtp <- function(
     geom_density(alpha=0.4) +
     geom_vline(data=mu, aes(xintercept=grp.median, color=compound),
                linetype="dashed") +
-    scale_color_manual(values = MultiWAS::vector_to_colors(unique(sig.ranks$compound))) +
-    scale_fill_manual(values = MultiWAS::vector_to_colors(unique(sig.ranks$compound))) +
+    scale_color_manual(values = vector_to_colors(unique(sig.ranks$compound))) +
+    scale_fill_manual(values = vector_to_colors(unique(sig.ranks$compound))) +
     xlab("Signature Average Rank") + ylab("Density") +
     theme_classic() +
     theme(legend.position = c(0.8, 0.8))

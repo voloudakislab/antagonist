@@ -1,7 +1,7 @@
 #' Split gctx files in RDS files
 #'
 #' Prepare RDS files from LINCS gctx files for main pipeline. Need to run this for xpr
-#' Requires the cmapR (either from bioconductor or github)
+#' Requires 1) cmapR (either from bioconductor or github), 2) .gctx files, 3) siginfo_beta.txt
 #'
 #' Defaults to selecting "Golden" signatures, a heuristic for assessing whether
 #' a signature is reproducible and distinct:
@@ -28,7 +28,7 @@ split_gctx <- function(
     # is_gold: A heuristic for assessing whether a signature is reproducible and distinct. Requirements include: distil_cc_q75 >= 0.2 and pct_self_rank_q25 <= 0.05.
     distil_cc_q75_min     = 0.2,
     pct_self_rank_q25_max = 0.05,
-    grep.sig.pattern = "trt_cp|trt_sh|trt_oe|trt_xpr"
+    grep.sig.pattern      = "trt_cp|trt_sh|trt_oe|trt_xpr"
 ){
   ###############
   # Types of data

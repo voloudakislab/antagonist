@@ -151,16 +151,16 @@ breakdown <- unique(signature[,c("gwas","model_ID")])
 lapply(
   unique(breakdown$gwas),
   FUN = function(folder) {
-    MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/5rank/S01A/",MultiWAS::make_java_safe(folder)))
+    gv_dir.create(paste0(results.dir, "/intermediate.files/5rank/S01A/",make_java_safe(folder)))
     lapply(
       unique(breakdown[gwas==folder]$model_ID),
       FUN = function(subfolder) {
-        MultiWAS::gv_dir.create(paste0(results.dir, "/intermediate.files/5rank/S01A/",MultiWAS::make_java_safe(folder),
-                                       "/", MultiWAS::make_java_safe(subfolder)))
+        gv_dir.create(paste0(results.dir, "/intermediate.files/5rank/S01A/",make_java_safe(folder),
+                                       "/", make_java_safe(subfolder)))
         fwrite(
           signature[gwas == folder & model_ID == subfolder],
-          paste0(results.dir, "/intermediate.files/5rank/S01A/",MultiWAS::make_java_safe(folder),
-                 "/", MultiWAS::make_java_safe(subfolder), "/", file.prefix,".csv.gz") )
+          paste0(results.dir, "/intermediate.files/5rank/S01A/",make_java_safe(folder),
+                 "/", make_java_safe(subfolder), "/", file.prefix,".csv.gz") )
       }) # second loop function
   } ) # first loop function
 

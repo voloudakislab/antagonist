@@ -3,15 +3,28 @@ Type: Package
 Title: Gene target prioritization and computational drug repurposing suite
 Version: 0.1.0
 Authors@R: 
-  c(person(given = "Georgios",
-           family = "Voloudakis", 
-           email = "georgios.voloudakis@mssm.edu", 
-           role = c("cre","aut"))
-           )
+  c(person(given   = "Georgios",
+           family  = "Voloudakis", 
+           email   = "georgios.voloudakis@mssm.edu", 
+           role    = c("cre","aut"),
+           comment = c(ORCID = "0000-0002-5729-632X")
+           ),
+    person(given   = "Marios",
+           family  = "Anyfantakis", 
+           email   = "marios.anyfantakis@mssm.edu", 
+           role    = c("aut"),
+           comment = c(ORCID = "0009-0007-8773-0864")
+           ),
+    person(given   = "Zhenyi",
+           family  = "Wu", 
+           email   = "zhenyi.wu@mssm.edu", 
+           role    = c("ctb"),
+           comment = c(ORCID = "0009-0001-4180-7877")
+           ) )
 Maintainer: Georgios Voloudakis <georgios.voloudakis@mssm.edu>
-Description: Antagonism assays
-    Gene target prioritization
-    Computational drug repurposing
+Description: Tools to identify compounds that antagonize polygenic
+    transcriptional signatures. Can be use both for gene target prioritization
+    and computational drug repurposing with relevant perturbagen libraries.
     biocViews: software
 Depends: 
     R (>= 4.0.0),
@@ -28,11 +41,18 @@ Imports:
     cowplot,
     cmapR,
     Hmisc,
-    optparse
+    optparse,
+    scales,
+    ggpubr,
+    viridis,
+    RColorBrewer,
+    Rmpfr,
+    colourvalues,
+    ggrepel,
+    cowplot
 Remotes:
-    voloudakislab/MultiWAS
 Suggests:
-License: GPLv4
+License: Artistic-2.0
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2

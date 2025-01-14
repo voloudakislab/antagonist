@@ -16,6 +16,7 @@ gtp_pvalue_qqplot(
   twas.trait.column = "gwas",
   twas.tissue.column = "model_ID",
   twas.zscore.column = "zscore",
+  twas.pvalue.column = "pvalue",
   twas.FDR.column = "fdr_trait_model",
   gtp.df = NA,
   gtp.feature.name.column = "pert_iname",
@@ -52,6 +53,8 @@ gtp_pvalue_qqplot(
 \item{twas.tissue.column}{Column name for tissue/cell type in disease df. Default is "model_ID"}
 
 \item{twas.zscore.column}{Column name for zscore in disease df. Default is "zscore"}
+
+\item{twas.pvalue.column}{Column name for pvalue in disease df. Default is "pvalue"}
 
 \item{twas.FDR.column}{Column name for FDR in disease df. Default is "fdr_trait_model"}
 

@@ -27,6 +27,7 @@
 #' @param twas.trait.column Column name for trait/gwas in disease df. Default is "gwas"
 #' @param twas.tissue.column Column name for tissue/cell type in disease df. Default is "model_ID"
 #' @param twas.zscore.column Column name for zscore in disease df. Default is "zscore"
+#' @param twas.pvalue.column Column name for pvalue in disease df. Default is "pvalue"
 #' @param twas.FDR.column Column name for FDR in disease df. Default is "fdr_trait_model"
 #' @param gtp.df data frame or file with the antagonist signature data frame
 #' @param gtp.feature.name.column Column name for feature name in gtp df. Default is "pert_iname"
@@ -62,6 +63,7 @@ gtp_pvalue_qqplot  <- function(
   twas.trait.column = "gwas",
   twas.tissue.column = "model_ID",
   twas.zscore.column = "zscore",
+  twas.pvalue.column = "pvalue",
   twas.FDR.column    = "fdr_trait_model",
 
   ### Antagonist gtp output
@@ -84,6 +86,7 @@ gtp_pvalue_qqplot  <- function(
   library(ggplot2)
   # library(dplyr)
   # library(data.table)
+  `%!in%` = Negate(`%in%`)
 
   # Prepare the TWAS df
   if (use.sample.data) { # for optimizing the plot
@@ -101,7 +104,23 @@ gtp_pvalue_qqplot  <- function(
   setnames(twas.df, twas.trait.column,  "gwas")
   setnames(twas.df, twas.tissue.column, "model_ID")
   setnames(twas.df, twas.zscore.column, "zscore")
-  setnames(twas.df, twas.FDR.column,    "fdr_trait_model")
+  # handle twas FDR column
+  if (twas.FDR.column %!in% names(twas.df)) {
+    comb.grid <- unique(twas.df[, c("gwas", "model_ID")])
+    setnames(comb.grid, c("model_ID"), c("ID"))
+    twas.df <- do.call(
+      rbind,
+      pbmclapply(
+        1:nrow(comb.grid),
+        FUN = function(i) {
+          x   <- twas.df[gwas == comb.grid$gwas[i] & model_ID == comb.grid$ID[i]]
+          x$fdr_trait_model <- p.adjust(x[[twas.pvalue.column]],method = "fdr")
+          return(x)
+        }
+      ))
+  } else {
+    setnames(twas.df, twas.FDR.column,    "fdr_trait_model")
+  }
   if (is.na(thistrait)) {
     if (length(unique(twas.df$gwas)) == 1) {
       thistrait <- unique(twas.df$gwas)

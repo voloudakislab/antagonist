@@ -27,7 +27,7 @@ N/A. Saves the figures
 }
 \description{
 Prepare RDS files from LINCS gctx files for main pipeline. Need to run this for xpr
-Requires the cmapR (either from bioconductor or github)
+Requires 1) cmapR (either from bioconductor or github), 2) .gctx files, 3) siginfo_beta.txt
 }
 \details{
 Defaults to selecting "Golden" signatures, a heuristic for assessing whether

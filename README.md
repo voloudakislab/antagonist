@@ -212,8 +212,9 @@ A few useful column definitions across files are the following:
 
 Average rank (`AvgRank`) distribution plots are also generated for diagnostic purposes. Please note that when using cluster comparison signatures, the z-scores of the disease signatures and the `AvgRank` distributions may not be normally distributed, but the pipeline is non-parametric and can accomodate for that.
 
-![CDR AvgRank Distribution](/data-raw/RA_cdr_AvgRank_distribution_landscape.png)
-![GTP AvgRank Distribution](/data-raw/RA_gtp_AvgRank_distribution_landscape.png)
+![CDR AvgRank Distribution](/data-raw/readme.images/RA_cdr_AvgRank_distribution_landscape.png)
+
+![GTP AvgRank Distribution](/data-raw/readme.images/RA_gtp_AvgRank_distribution_landscape.png)
 
 # STEP 4: Additional figures
 Additional figures can be prepared
@@ -231,7 +232,8 @@ showcase_method_cdr_gtp(
 )
 
 ```
-![actinomycin D in RA](/data-raw/RA.STARNET_BLD.actinomycin-d.CRCGN004_PC3_6H.BRD-A42383464-001-04-8.10.png)
+
+![actinomycin D in RA](/data-raw/readme.images/RA.STARNET_BLD.actinomycin-d.CRCGN004_PC3_6H.BRD-A42383464-001-04-8.10.png)
 
 ## Generating a gene-target prioritization plot
 ```
@@ -244,6 +246,7 @@ gtp_pvalue_qqplot(    ### Parameters
   figure.name     = "gtp_actions", # main body of the name of the figure
 )
 ```
-In this there is no actionable gene that demonstrates a FDR-significant compbined score while also having FDR-significant dysregulation in the disease signatures and antagonism via shRNA/overexpression/CRISPR
-![actinomycin D in RA](/data-raw/prioritization.stouffer.scaled.before.png)
+In this there is no actionable gene that demonstrates a FDR-significant compbined score while also having FDR-significant dysregulation in the disease signatures and antagonism via shRNA/overexpression/CRISPR.
+
+![actinomycin D in RA](/data-raw/readme.images/prioritization.stouffer.scaled.before.png)
 

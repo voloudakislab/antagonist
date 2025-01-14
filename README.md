@@ -1,6 +1,30 @@
-# antagonist
+<!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+
+- [How to cite this manuscript](#how-to-cite-this-manuscript)
+- [Computational environment requirements](#computational-environment-requirements)
+- [Installation](#installation)
+- [Overview of the inputs](#overview-of-the-inputs)
+- [Perturbagen signature library](#perturbagen-signature-library)
+   * [Download the Expanded CMap LINCS Resource 2020 signature files from clue.io:](#download-the-expanded-cmap-lincs-resource-2020-signature-files-from-clueio)
+   * [Chunk the signature files in `.RDS` objects](#chunk-the-signature-files-in-rds-objects)
+   * [Disease file format (csv, csv.gz or RDS)](#disease-file-format-csv-csvgz-or-rds)
+- [Run the analyses](#run-the-analyses)
+- [STEP 1: Run antagonism](#step-1-run-antagonism)
+- [STEP 2: Aggregate and prioritize](#step-2-aggregate-and-prioritize)
+- [STEP 3: The output](#step-3-the-output)
+- [STEP 4: Additional figures](#step-4-additional-figures)
+   * [Showcasing a signature](#showcasing-a-signature)
+   * [Generating a gene-target prioritization plot](#generating-a-gene-target-prioritization-plot)
+
+<!-- TOC end -->
+
+antagonist
+==========
 
 A multithreaded R package and wrapper for gene target prioritization and computational drug repurposing.
+
+<!-- TOC --><a name="how-to-cite-this-manuscript"></a>
+# How to cite this manuscript
 
 *If you use this package for gene target prioritization (GTP), cite::*
 
@@ -14,6 +38,7 @@ Voloudakis G, Lee KM, Vicari JM, Zhang W, Hoagland D, Venkatesh S, Bian J, Anyfa
 
 So H-C, Chau CK-L, Chiu W-T, Ho K-S, Lo C-P, Yim SH-Y, et al. Analysis of genome-wide association data highlights candidates for drug repositioning in psychiatry. Nat Neurosci. 2017;20:1342–9. PMID:[28805813](https://pubmed.ncbi.nlm.nih.gov/28805813/)
 
+<!-- TOC --><a name="computational-environment-requirements"></a>
 # Computational environment requirements
 1. A linux computer (package has been developed and tested in linux; may work in other operating systems but it hasn't been tested)
 2. R>=4.0
@@ -26,6 +51,7 @@ sudo apt-get install libmpfr-dev
 ```
 
 
+<!-- TOC --><a name="installation"></a>
 # Installation
 ```
 devtools::install_github("DiseaseNeuroGenomics/antagonist") # link for the center's repository
@@ -39,15 +65,18 @@ install.packages('remotes')
 remotes::install_github('RGLab/cytolib')
 ```
 
+<!-- TOC --><a name="overview-of-the-inputs"></a>
 # Overview of the inputs
 1. [The perturbagen signature library](#-perturbagen-signature-library): a data.frame with known transcriptional signatures for compounds/shRNAs, etc, in this case LINCS
 2. A disease signature: a data.frame with genes and their respective changees (can be logFC, z-score, effect sizes, etc.)
 3. A recipe file: this is only required with job schedulers such as IBM's LSF; the wiki will be updated in the future for such applications.
 
+<!-- TOC --><a name="perturbagen-signature-library"></a>
 # Perturbagen signature library
 We are currently using the Expanded CMap LINCS Resource 2020 signature files from clue.io. For installation of the perturbagen library, a total of ~67GB are required (11.5 GB after deleting intermediate files). We are using level5 signatures (see picture with different levels below).
 ![LINCS signature level overview](/data-raw/readme.images/L1000_Lvl5.png)
 
+<!-- TOC --><a name="download-the-expanded-cmap-lincs-resource-2020-signature-files-from-clueio"></a>
 ## Download the Expanded CMap LINCS Resource 2020 signature files from clue.io:
 We are currently using the version last updated on 11/23/201 (created on 11/20/2020) which can be downloaded [here](https://clue.io/data/CMap2020#LINCS2020).
 
@@ -76,6 +105,7 @@ Out of the 1,201,944 signatures the vast majority are not considered reproducibl
 For our projects we include all `is_gold` signatures and do no filtering based on `is_exemplar` status. However, filtering for both will half the computational costs.
 
 
+<!-- TOC --><a name="chunk-the-signature-files-in-rds-objects"></a>
 ## Chunk the signature files in `.RDS` objects
 This is done for easier batch processing and improved IO performance when running multiple versions.
 ```
@@ -85,6 +115,7 @@ antagonist::split_gctx(parent.signature.dir = signature.dir)
 ```
 The `level5_*.gctx` files can now be safely deleted.
 
+<!-- TOC --><a name="disease-file-format-csv-csvgz-or-rds"></a>
 ## Disease file format (csv, csv.gz or RDS)
 The input data frame usually is a TWAS/GFI/DGE output file. If another file is used then some column name changes are needed to work as expected. The required columns are as follows (with default names):
 
@@ -103,6 +134,7 @@ For the purposes of the tutorial we will use
 
 !!! Add file for testing !!!
 
+<!-- TOC --><a name="run-the-analyses"></a>
 # Run the analyses
 Setting up the variables and loading the package
 > For the tutorial, we will use the genetically regulated gene expression for Rheumatoid Arthritis 
@@ -113,6 +145,7 @@ signature.dir    <- "ExpandedCMapLINCS2020/"
 disease.sig.file <- system.file("extdata", "sample.datasets/RA.epixcan.csv.gz", package="antagonist")
 ```
 
+<!-- TOC --><a name="step-1-run-antagonism"></a>
 # STEP 1: Run antagonism
 For one trait-tissue combination, it takes about 23,800 thread-minutes on an Intel 10th gen core.
 > For testing if the pipeline is running, setting `prototyping = 10`, for example, which means that only 10/300 signatures will be used from each signature file would allow to see if there are any errors.
@@ -128,6 +161,7 @@ noperm         = 3 # this is just for the tutorial to reduce run times
 )
 ```
 
+<!-- TOC --><a name="step-2-aggregate-and-prioritize"></a>
 # STEP 2: Aggregate and prioritize
 
 ```
@@ -136,6 +170,7 @@ aggregate_and_prioritize()
 
 > Please note that the default way of meta-analyzing the results is pulling all the tissues or cell types (whatever is in model_ID) together.
 
+<!-- TOC --><a name="step-3-the-output"></a>
 # STEP 3: The output
 This is the out put folder structure, if there are more than one tissues parsed, then 
 ```
@@ -216,9 +251,11 @@ Average rank (`AvgRank`) distribution plots are also generated for diagnostic pu
 
 ![GTP AvgRank Distribution](/data-raw/readme.images/RA_gtp_AvgRank_distribution_landscape.png)
 
+<!-- TOC --><a name="step-4-additional-figures"></a>
 # STEP 4: Additional figures
 Additional figures can be prepared
 
+<!-- TOC --><a name="showcasing-a-signature"></a>
 ## Showcasing a signature
 For example, how does actinomycin D transcriptional signature antagonize the RA disease signature?
 
@@ -235,6 +272,7 @@ showcase_method_cdr_gtp(
 
 ![actinomycin D in RA](/data-raw/readme.images/RA.STARNET_BLD.actinomycin-d.CRCGN004_PC3_6H.BRD-A42383464-001-04-8.10.png)
 
+<!-- TOC --><a name="generating-a-gene-target-prioritization-plot"></a>
 ## Generating a gene-target prioritization plot
 ```
 gtp_pvalue_qqplot(    ### Parameters

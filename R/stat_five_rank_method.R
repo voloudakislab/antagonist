@@ -56,7 +56,7 @@ five_rank_method <- function(
     ks.test.obj.down = ifelse(a.down>b.down, a.down , -b.down)
 
     ks.signed <- ifelse(
-      ks.test.obj.up != ks.test.obj.down,
+      sign(ks.test.obj.up) != sign(ks.test.obj.down),
       ks.test.obj.up - ks.test.obj.down, 0                 )
     # rm(list = c("geneset2", "a.up", "b.up", "a.down", "b.down",
     #             "ks.test.obj.up", "ks.test.obj.down"))

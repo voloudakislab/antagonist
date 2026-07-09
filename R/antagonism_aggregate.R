@@ -14,7 +14,8 @@
 #' @param cell.file Compound file; default is cell_lkines.csv from clue.io
 #' @param ref.drug File with information for compounds (trt_cp) such as mechanism of action, indication etc. Look at data-raw if you want to generate a similar file
 #' @param ref.cell File with informaiton about the cell lines used in the perturbagen library.
-#' @param iterative.tissue when having more than one tissue/cell type aggregate for each tissue as well.
+#' @param iterative.tissue when having more than one tissue/cell type run for each tissue or cell types. Default is FALSE
+#' @param iterative.aggregate when running iterative also run the aggregate of all tissues or cell types. Default is TRUE
 #' @param min.experiments.n Min experiment per perturbagen (default is 2)
 #' @param n.cores Number of cores to use if multithreaded
 #' @return Compound level summary
@@ -35,6 +36,7 @@ aggregate_and_prioritize = function(
   ref.cell                        = CELL.LINE.INFO,
   # Iterative
   iterative.tissue                = TRUE,
+  iterative.aggregate             = TRUE,
   # parameters
   min.experiments.n               = 2,
   n.cores                         = parallel::detectCores()-2
@@ -98,37 +100,6 @@ aggregate_and_prioritize = function(
 
   }
 
-  # #################################
-  # # Density plot for IL10RB (paper)
-  # x$shRNA <- paste0("other (n=",length(x[pert_iname != "IL10RB"]$shRNA),")")
-  # x[pert_iname == "IL10RB"]$shRNA <- paste0("IL10RB (n=",length(x[pert_iname == "IL10RB"]$shRNA),")")
-  # IL10RBplot <- ggpubr::ggdensity( # https://rpkgs.datanovia.com/ggpubr/reference/ggdensity.html
-  #   x, x = "AvgRank", add = "mean", xlab = "Signature AvgRank",
-  #   color = "shRNA", fill = "shRNA",
-  #   palette = vector_to_colors(unique(x$shRNA)) # , rug = TRUE
-  #   )
-  # cowplot::ggsave2( paste0(output.dir, "/IL10RB_AvgRank_distribution_square.pdf") , IL10RBplot, height = 4, width = 4 )
-  # cowplot::ggsave2( paste0(output.dir, "/IL10RB_AvgRank_distribution_landscape.pdf") , IL10RBplot, height = 3, width = 10 )
-
-
-  # This is no longer used, since most signatures come only from specific cell lines.
-  # # Remove those that were done in irrelevant cell lines - keeping lung and immune cell lines
-  # if (discard.non.relevant.cell.lines) {
-  #   x <- as.data.table(inner_join(x, cell_lines))
-  #   x <- x[!is.na(clinical_phase)]
-  # }
-
-  # TODO: Use a combination approach like this to iterate
-  # tempdf <- fread("output/2.METAXCAN/OUD_df.all.annotated.onlytranscripts.csv.gz")
-  # ucomb  <- unique(tempdf[,c("gwas", "model_ID")]) # this is need for the ancestry specific approach
-  # for (i in seq(nrow(ucomb)) ) {
-  #   aggregate_and_prioritize(
-  #     limit.gwass.to   = ucomb[i]$gwas,
-  #     limit.models.to  = ucomb[i]$model_ID,
-  #     n.cores          = parallel::detectCores()/2)
-  # }
-
-
   lapply(
     gwass,
     FUN = function(thisgwas) {
@@ -146,19 +117,15 @@ aggregate_and_prioritize = function(
             # Limit to GWAS of interest
             x <- x[gwas == thisgwas]
 
-            # Limit to models of interest and implement iterative approach
-            if (!is.na(limit.models.to[1])) x <- x[model_ID %in% limit.models.to]
-            if (iterative.tissue) { # this is a bit complicated to accomodate for merging a list with a vector
-              limit.models.to <- list(limit.models.to)
-              existing.models <- unique(x$model_ID)
-              for (z in seq(length(existing.models))) {
-                limit.models.to[z+1] <- existing.models[z] }
-              limit.models.to <- unique(limit.models.to)
-              # If it is one model, don't run it twice
-              if (length(limit.models.to)<=2) limit.models.to <- limit.models.to[-1]
-              }
 
-
+            if (!is.na(limit.models.to[1])) {  # first limit the dataset to what we have
+              x <- x[model_ID %in% limit.models.to] }
+            if (iterative.tissue) {
+              limit.models.to <- unique(x$model_ID)
+              # Add the NA or All below
+              if (iterative.aggregate & (length(limit.models.to)>1)) {
+                limit.models.to[length(limit.models.to)+1] <- NA }
+            } else limit.models.to <- NA
 
             # Now run all the model_IDs
             pbapply::pblapply(

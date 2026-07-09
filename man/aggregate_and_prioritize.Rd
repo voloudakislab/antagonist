@@ -13,6 +13,7 @@ aggregate_and_prioritize(
   ref.drug = TRT_CP.INFO.20200324,
   ref.cell = CELL.LINE.INFO,
   iterative.tissue = TRUE,
+  iterative.aggregate = TRUE,
   min.experiments.n = 2,
   n.cores = parallel::detectCores() - 2
 )
@@ -32,7 +33,9 @@ aggregate_and_prioritize(
 
 \item{ref.cell}{File with informaiton about the cell lines used in the perturbagen library.}
 
-\item{iterative.tissue}{when having more than one tissue/cell type aggregate for each tissue as well.}
+\item{iterative.tissue}{when having more than one tissue/cell type run for each tissue or cell types. Default is FALSE}
+
+\item{iterative.aggregate}{when running iterative also run the aggregate of all tissues or cell types. Default is TRUE}
 
 \item{min.experiments.n}{Min experiment per perturbagen (default is 2)}
 
